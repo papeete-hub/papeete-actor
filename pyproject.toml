@@ -1,0 +1,34 @@
+[project]
+name = "charter"
+version = "0.1.0"
+description = "Conformance gates for the Papeete ecosystem contracts — actor cards, inter-agent messages, publication logs."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Papeete Consulting", email = "yoann.remy@outlook.com" }]
+license = "MIT"
+keywords = ["governance", "conformance", "agents", "bounded-context", "actor-model"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = ["pyyaml>=6.0"]
+
+[project.scripts]
+charter = "charter.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/charter"]
+# The schemas are FETCHED, not committed (see contracts.pin) — so they are gitignored, and
+# hatchling would exclude them from the wheel. `artifacts` is the override that says: these are
+# build outputs and they belong in the distribution. A wheel without them is a gate with nothing
+# to enforce, which `charter contracts` will tell you on the first run.
+artifacts = ["src/charter/schemas/*.yaml"]
+
+[tool.hatch.build.targets.sdist]
+artifacts = ["src/charter/schemas/*.yaml"]

@@ -1,0 +1,23 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: resolve contracts.pin
+        # The contracts live in a private sibling repo. This is the ONE pipeline that needs read
+        # access to it — the difference between this design and asking every consumer to auth.
+        env:
+          GITHUB_TOKEN: ${{ secrets.CONTRACTS_READ_TOKEN }}
+        run: uv run --with pyyaml python3 scripts/fetch_contracts.py
+      - name: build
+        run: uv build
+      - name: the wheel must carry its contracts
+        # A wheel that installs cleanly and enforces nothing is the failure mode worth a gate.
+        run: |
+          uv venv /tmp/probe
+          /tmp/probe/bin/python -m pip install -q dist/*.whl
+          /tmp/probe/bin/charter contracts

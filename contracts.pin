@@ -1,0 +1,24 @@
+# The ecosystem-governance ref this build's schemas are fetched from.
+#
+# charter's payload IS the contracts, and they are NOT authored here — ECO.GOV owns them
+# (ADR-ECO-0005). This file is the pin, and `scripts/fetch_contracts.py` is what resolves it into
+# src/charter/schemas/ at build time. Nothing under schemas/ is committed: a copy in git is a copy
+# that drifts, and the whole reason charter exists is to delete copies.
+#
+# THE COST THIS PIN MAKES VISIBLE. Because the gate lives here and the contract lives there, a
+# contract change and its gate change CANNOT LAND IN ONE COMMIT. Between the two merges, a
+# published charter enforces a contract that has moved. That is a dual write, and ECO.GOV's own
+# publication contract calls it out by name. The pin is what bounds the damage: a build is always
+# reproducible against one exact contract state, and the window is between RELEASES, never inside
+# one. Accepted deliberately (ADR-ECO-0017); revisit if the window ever bites.
+
+repo: papeete-foundry/ecosystem-governance
+ref: 5eb6347a96158f9fc1d20d855e97845ce45d8407
+# ^ a commit sha, not a tag: the contracts it carries (actor-card/v1, publication/v2) are still
+#   Proposed in ecosystem-governance#20 at the time of this build. Move this to a release tag once
+#   that PR merges — a sha is honest for a 0.1.x bootstrap and wrong for a stable line.
+
+contracts:
+  - ecosystem/contracts/actor-card.schema.yaml
+  - ecosystem/contracts/message.schema.yaml
+  - ecosystem/contracts/publication.schema.yaml
