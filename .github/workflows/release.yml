@@ -20,7 +20,7 @@ jobs:
       - name: resolve contracts.pin
         env:
           GITHUB_TOKEN: ${{ secrets.CONTRACTS_READ_TOKEN }}
-        run: uv run --with pyyaml python3 scripts/fetch_contracts.py
+        run: uv run --no-project --with pyyaml python3 scripts/fetch_contracts.py
       - name: build
         run: uv build
       - name: verify the wheel carries its contracts
