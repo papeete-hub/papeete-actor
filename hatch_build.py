@@ -3,8 +3,8 @@
 WHY THIS EXISTS. `scripts/fetch_contracts.py` as a manual pre-build step is fine for CI, where the
 workflow can call it, and useless for `pip install git+…`: pip builds from a fresh checkout where
 nothing ran the fetch, and the wheel ships with no schemas. That failure is not loud at install
-time — it surfaces later as a gate that enforces nothing. It was found by installing charter into
-ECO.GOV from git and watching `charter contracts` report an empty contracts directory.
+time — it surfaces later as a gate that enforces nothing. It was found by installing papeete-actor into
+ECO.GOV from git and watching `papeete-actor contracts` report an empty contracts directory.
 
 So the fetch becomes part of the build itself. A source build is now self-sufficient, and the
 manual script stays for local iteration.
@@ -19,7 +19,7 @@ from pathlib import Path
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 ROOT = Path(__file__).resolve().parent
-DEST = ROOT / "src" / "charter" / "schemas"
+DEST = ROOT / "src" / "papeete_actor" / "schemas"
 EXPECTED = 3
 
 
@@ -38,7 +38,7 @@ class FetchContracts(BuildHookInterface):
             # Fail the BUILD, not the install-time import. A wheel without contracts is a gate
             # with nothing to enforce, and shipping one quietly is worse than not shipping.
             raise RuntimeError(
-                "cannot resolve contracts.pin — refusing to build a charter with no contracts.\n"
+                "cannot resolve contracts.pin — refusing to build a papeete-actor with no contracts.\n"
                 f"{r.stdout}{r.stderr}"
             )
         self.app.display_info(r.stdout.strip())

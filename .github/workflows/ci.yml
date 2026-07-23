@@ -20,4 +20,4 @@ jobs:
         run: |
           uv venv /tmp/probe
           /tmp/probe/bin/python -m pip install -q dist/*.whl
-          /tmp/probe/bin/charter contracts
+          /tmp/probe/bin/papeete-actor contracts

@@ -1,7 +1,7 @@
-"""charter check — the cross-card join. ECO.GOV's standing nonconformity, closed.
+"""papeete-actor check — the cross-card join. ECO.GOV's standing nonconformity, closed.
 
 Everything here needs EVERY card at once, which is exactly why none of it lives in the per-card
-gate. Walk the registry, read each actor.yaml, and join publications against subscriptions and
+gate. Walk the registry, read each papeete-actor.yaml, and join publications against subscriptions and
 dependencies:
 
     dangling-subscription       nobody publishes that id
@@ -32,6 +32,14 @@ def _load(path: Path):
         return None
 
 
+def _actor_id(card: dict) -> str | None:
+    """The ecosystem-layer id. ADR-ECO-0018 renamed the key `actor:` -> `papeete_actor:`; both are
+    read because the join runs over a MIXED ecosystem — six cards are still v0 and will be until
+    each pair migrates in its own repo. Dropping the old key would make the join silently stop
+    resolving every unmigrated card, which is the one failure this tool exists to prevent."""
+    return card.get("papeete_actor") or card.get("actor")
+
+
 def run(workspace: Path, registry_path: Path) -> Report:
     """workspace: the directory holding the sibling repos. registry_path: ecosystem/registry.yaml."""
     rep = Report()
@@ -40,7 +48,7 @@ def run(workspace: Path, registry_path: Path) -> Report:
         rep.errors.append(f"{registry_path}: missing or unparseable — the join has no index to walk")
         return rep
 
-    schema = load("actor-card")
+    schema = load("papeete-actor-card")
     classes = registry_classes(reg)
 
     cards: dict[str, dict] = {}     # repo dir name -> card
@@ -70,7 +78,7 @@ def run(workspace: Path, registry_path: Path) -> Report:
     # ── the index of what is published, keyed as consumers write it ──────
     published: dict[str, str] = {}
     for name, card in cards.items():
-        actor = card.get("actor")
+        actor = _actor_id(card)
         for pub in (card.get("publications") or []):
             for key in {actor, name}:
                 if key and key != "none":
@@ -99,7 +107,7 @@ def run(workspace: Path, registry_path: Path) -> Report:
     # ── unsubscribed publications ────────────────────────────────────────
     for key, owner in sorted(published.items()):
         # A publication is reachable under either of its two keys; only report the pair once.
-        actor = cards[owner].get("actor")
+        actor = _actor_id(cards[owner])
         aliases = {f"{k}/{key.split('/', 1)[1]}" for k in {actor, owner} if k and k != "none"}
         if aliases & subscribed:
             continue

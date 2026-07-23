@@ -8,7 +8,7 @@ noise. That was the reliever-design#3 / reliever-business#14 failure.
 Ported from ecosystem-governance/scripts/lint_message.py, which stays where it is: it is vendored
 into settler's work-pipeline template and byte-pinned by check_pipeline_sync.py in the repos that
 consume it. Editing it would break their pin check. The duplication is deliberate and temporary —
-it retires when those repos install charter instead of vendoring the script (ADR-ECO-0017).
+it retires when those repos install papeete-actor instead of vendoring the script (ADR-ECO-0017).
 """
 import re
 from pathlib import Path

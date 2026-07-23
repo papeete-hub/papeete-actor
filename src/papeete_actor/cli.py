@@ -1,10 +1,10 @@
-"""charter — the CLI. One tool, one pin, three contracts.
+"""papeete-actor — the CLI. One tool, one pin, three contracts.
 
-    charter lint-card        ACTOR.YAML...      actor-card/v1
-    charter lint-message     --issue-body FILE  inter-agent-message/v0
-    charter lint-publication REPO...            publication/v2
-    charter check            --workspace DIR    the cross-card join
-    charter contracts                           which contract versions this build enforces
+    papeete-actor lint-card        PAPEETE-ACTOR.YAML...  papeete-actor-card/v1
+    papeete-actor lint-message     --issue-body FILE      inter-agent-message/v0
+    papeete-actor lint-publication REPO...                publication/v2
+    papeete-actor check            --workspace DIR        the cross-card join
+    papeete-actor contracts                               which contract versions this build enforces
 """
 import argparse
 import sys
@@ -28,7 +28,7 @@ def _registry(explicit: Path | None, near: Path) -> dict | None:
 
 
 def cmd_lint_card(args) -> int:
-    schema = load("actor-card")
+    schema = load("papeete-actor-card")
     workspace = Path(args.cards[0]).resolve().parent.parent
     reg = _registry(args.registry, workspace)
     if reg is None:
@@ -43,7 +43,7 @@ def cmd_lint_card(args) -> int:
     if args.strict:
         rep.errors += rep.warns
         rep.warns = []
-    return rep.emit("actor-card gate")
+    return rep.emit("papeete-actor-card gate")
 
 
 def cmd_lint_message(args) -> int:
@@ -63,7 +63,7 @@ def cmd_lint_publication(args) -> int:
     rep = Report()
     for r in args.repos:
         root = Path(r)
-        card_path = root / "actor.yaml"
+        card_path = root / "papeete-actor.yaml"
         card = yaml.safe_load(card_path.read_text()) if card_path.exists() else None
         rep.merge(publications.lint_log(root, schema, card))
     return rep.emit("publication gate")
@@ -72,11 +72,11 @@ def cmd_lint_publication(args) -> int:
 def cmd_check(args) -> int:
     workspace = Path(args.workspace).resolve()
     registry = Path(args.registry) if args.registry else workspace / "ecosystem-governance" / "ecosystem" / "registry.yaml"
-    return check.run(workspace, registry).emit("charter check")
+    return check.run(workspace, registry).emit("papeete-actor check")
 
 
 def cmd_contracts(args) -> int:
-    print(f"charter {__version__}  —  contracts from {contracts_dir()}")
+    print(f"papeete-actor {__version__}  —  contracts from {contracts_dir()}")
     for kind, expected in CONTRACTS.items():
         try:
             actual = load(kind).get("contract")
@@ -84,17 +84,17 @@ def cmd_contracts(args) -> int:
             print(f"  FAIL {kind}: {e}", file=sys.stderr)
             return 1
         mark = "ok  " if actual == expected else "FAIL"
-        print(f"  {mark} {kind:12} {actual}" + ("" if actual == expected else f"  (build expects {expected})"))
+        print(f"  {mark} {kind:18} {actual}" + ("" if actual == expected else f"  (build expects {expected})"))
     return 0
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="charter", description=__doc__,
+    ap = argparse.ArgumentParser(prog="papeete-actor", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--version", action="version", version=f"charter {__version__}")
+    ap.add_argument("--version", action="version", version=f"papeete-actor {__version__}")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    p = sub.add_parser("lint-card", help="validate actor.yaml against actor-card/v1")
+    p = sub.add_parser("lint-card", help="validate papeete-actor.yaml against papeete-actor-card/v1")
     p.add_argument("cards", nargs="+", type=Path)
     p.add_argument("--registry", type=Path, help="path to ecosystem/registry.yaml")
     p.add_argument("--strict", action="store_true", help="fail on unmigrated (v0) cards too")
@@ -108,7 +108,7 @@ def main(argv=None) -> int:
     p.set_defaults(fn=cmd_lint_message)
 
     p = sub.add_parser("lint-publication", help="validate a repo's events/ log against publication/v2")
-    p.add_argument("repos", nargs="+", type=Path, help="repo roots (each holding events/ and actor.yaml)")
+    p.add_argument("repos", nargs="+", type=Path, help="repo roots (each holding events/ and papeete-actor.yaml)")
     p.set_defaults(fn=cmd_lint_publication)
 
     p = sub.add_parser("check", help="the cross-card join over the whole ecosystem")

@@ -1,6 +1,6 @@
-"""The actor-card/v1 gate — one card against the contract.
+"""The papeete-actor-card/v1 gate — one card against the contract.
 
-WHAT THIS IS NOT. It does not run the cross-card join (charter.check). The classes that need every
+WHAT THIS IS NOT. It does not run the cross-card join (papeete_actor.check). The classes that need every
 card at once — dangling subscription, unsubscribed publication, undeclared consumption — are not
 decidable from one file. This validates the half a schema can carry.
 
@@ -14,7 +14,7 @@ import yaml
 from .report import Report
 from .schemas import load
 
-CONTRACT = "actor-card/v1"
+CONTRACT = "papeete-actor-card/v1"
 FLOATING = {"main", "master", "HEAD", "none", "None"}
 
 
@@ -30,7 +30,7 @@ def registry_classes(reg: dict) -> dict[str, str]:
     for entry in reg.get("repos", []):
         status = entry.get("card_status")
         kind = "actor" if status in ("adopted", "pending") else "dangling" if status == "none" else "external"
-        for key in (entry.get("repo"), entry.get("actor")):
+        for key in (entry.get("repo"), entry.get("papeete_actor") or entry.get("actor")):
             if key and key != "none":
                 out[key] = kind
                 if "/" in key:
@@ -76,7 +76,7 @@ def _unknown(d: dict, spec: dict, where: str, rep: Report) -> None:
 
 
 def lint(path: Path, schema: dict | None = None, registry: dict | None = None) -> Report:
-    schema = schema or load("actor-card")
+    schema = schema or load("papeete-actor-card")
     rep = Report()
 
     try:
@@ -207,7 +207,7 @@ def lint(path: Path, schema: dict | None = None, registry: dict | None = None) -
                 elif ref in FLOATING:
                     rep.errors.append(
                         f"{where}.then: run: over state-transfer binding '{binding}' against floating "
-                        f"ref '{ref}' — must pin (actor-card/v1 `the_pin_rule`)"
+                        f"ref '{ref}' — must pin (papeete-actor-card/v1 `the_pin_rule`)"
                     )
 
     if not rep.errors:

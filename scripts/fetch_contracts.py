@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Resolve contracts.pin into src/charter/schemas/ — the build-time half of `charter`.
+"""Resolve contracts.pin into src/papeete_actor/schemas/ — the build-time half of `papeete-actor`.
 
 The contracts are ECO.GOV's, in papeete-foundry/ecosystem-governance. They are fetched at the
 pinned ref and never committed here: a committed copy is a copy that drifts, and deleting copies is
-the entire argument for shipping charter as a package rather than vendoring gates repo by repo.
+the entire argument for shipping papeete-actor as a package rather than vendoring gates repo by repo.
 
 Run before any build:  python3 scripts/fetch_contracts.py
 
@@ -22,7 +22,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 PIN = ROOT / "contracts.pin"
-DEST = ROOT / "src" / "charter" / "schemas"
+DEST = ROOT / "src" / "papeete_actor" / "schemas"
 
 
 def token() -> str | None:
