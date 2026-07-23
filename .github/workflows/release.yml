@@ -24,7 +24,7 @@ jobs:
       - name: verify the wheel carries its contracts
         run: |
           uv venv /tmp/probe
-          /tmp/probe/bin/python -m pip install -q dist/*.whl
+          uv pip install --python /tmp/probe/bin/python -q dist/*.whl
           /tmp/probe/bin/papeete-actor contracts
       - name: publish to PyPI
         run: uv publish --trusted-publishing always

@@ -20,7 +20,7 @@ jobs:
         # It was a real risk while the schemas were build output; it is a cheap assertion now.
         run: |
           uv venv /tmp/probe
-          /tmp/probe/bin/python -m pip install -q dist/*.whl
+          uv pip install --python /tmp/probe/bin/python -q dist/*.whl
           /tmp/probe/bin/papeete-actor contracts
       - name: the gates must run
         # The package validates its own card with its own contract — the smallest end-to-end
