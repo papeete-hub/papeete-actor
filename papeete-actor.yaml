@@ -96,9 +96,13 @@ publications:
       needs no credential to anything: the contracts are in the wheel.
     shape: none
     status: >-
-      PLANNED as a PyPI release. The package builds and installs from a clean checkout with no
-      network beyond the index; nothing is published yet — the release lane waits on a pypi.org
-      pending publisher.
+      READY, UNRELEASED. The package builds and installs from a clean checkout with no network
+      beyond the index, CI is green, and both halves of the PyPI setup are in place as of
+      2026-07-23 — the pending publisher is registered and the `pypi` environment exists. Nothing
+      blocks a release now except pushing a `v*` tag, and nothing is published: `papeete-actor` is
+      still unclaimed on PyPI. The one consumer that exists, ECO.GOV, therefore pins a git sha
+      rather than a version — a pin that satisfies `the_pin_rule` and carries no ordering, so a
+      reader cannot tell whether they are behind. That closes on first release.
     surface: pyproject.toml; src/papeete_actor/ (PyPI name `papeete-actor`)
     breaking_flag: >-
       REQUIRED once released — consumers pin `papeete-actor==`, which is a pin by any reading of

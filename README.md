@@ -86,11 +86,13 @@ it for an upload token. There is nothing to rotate and nothing to leak.
 git tag v0.1.0 && git push origin v0.1.0     # .github/workflows/release.yml does the rest
 ```
 
-### One-time setup
+### One-time setup — **done for this repo**, both steps
 
-**1. A pending publisher on PyPI.** The project does not exist yet, so it is registered from the
-publisher side rather than by a first manual upload. At
-<https://pypi.org/manage/account/publishing/>, add a **GitHub** pending publisher:
+Kept as a record of what is configured, and as the recipe for the next package that needs it.
+
+**1. A pending publisher on PyPI** ✅ *registered 2026-07-23*. The project did not exist yet, so it
+is registered from the publisher side rather than by a first manual upload. At
+<https://pypi.org/manage/account/publishing/>, as a **GitHub** pending publisher:
 
 | Field | Value |
 |---|---|
@@ -104,15 +106,20 @@ All five must match exactly — PyPI checks the OIDC claims against them and rej
 otherwise. `release.yml` already declares `permissions: id-token: write` and
 `environment: pypi`, which is what makes those claims present.
 
-**2. The `pypi` GitHub environment**, which exists on this repo. Optional protection rules worth
-considering, since a release is irreversible (PyPI does not allow re-uploading a version):
-required reviewers, and restricting deployments to tags matching `v*`.
+**2. The `pypi` GitHub environment** ✅ *created*. No secrets in it — it exists so the OIDC claim
+carries an environment name for PyPI to match. Protection rules are **not** set and are worth
+considering, because a release is irreversible: PyPI never allows re-uploading a version, even after
+a delete. Required reviewers, and restricting deployments to tags matching `v*`, are the two that
+earn their keep.
 
 **A private repo is fine.** Trusted Publishing authenticates the *workflow*, not the source, so
 nothing here needs to be public for the package to be.
 
 After the first successful release PyPI converts the pending publisher into a normal one
-automatically; no second setup step.
+automatically; there is no second setup step.
+
+**Nothing has been published yet.** `papeete-actor` is unclaimed on PyPI and the release lane has
+never run — `git tag v0.1.0 && git push origin v0.1.0` is the whole of it.
 
 ### What a release asserts
 
