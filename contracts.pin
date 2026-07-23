@@ -13,7 +13,7 @@
 # one. Accepted deliberately (ADR-ECO-0017); revisit if the window ever bites.
 
 repo: papeete-foundry/ecosystem-governance
-ref: 5eb6347a96158f9fc1d20d855e97845ce45d8407
+ref: 1b6b93665e0672f6980a5b9e10fd3dcb5f2dd58d
 # ^ a commit sha, not a tag: the contracts it carries (papeete-actor-card/v1, publication/v2) are still
 #   Proposed in ecosystem-governance#20 at the time of this build. Move this to a release tag once
 #   that PR merges — a sha is honest for a 0.1.x bootstrap and wrong for a stable line.
