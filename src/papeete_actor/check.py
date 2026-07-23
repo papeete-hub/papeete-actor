@@ -57,11 +57,20 @@ def run(workspace: Path, registry_path: Path) -> Report:
         repo = entry.get("repo") or ""
         if not repo or "<" in repo or not entry.get("card"):
             continue
-        name = repo.split("/", 1)[-1]
-        path = workspace / name / entry["card"]
-        if not path.exists():
+        org, name = repo.split("/", 1) if "/" in repo else ("", repo)
+        # THE ECOSYSTEM SPANS TWO ORGS, so a flat sibling layout is not enough. `--workspace` may
+        # point at one org's directory (repos are siblings) or at the parent holding both (repos
+        # are under <org>/). Try both, and the parent's parent, so the same command works from
+        # either. Before ADR-ECO-0019 no papeete-hub repo held a card and only the flat shape was
+        # ever exercised.
+        candidates = [workspace / name, workspace / org / name, workspace.parent / org / name]
+        path = next((c / entry["card"] for c in candidates if (c / entry["card"]).exists()), None)
+        if path is None:
             if entry.get("card_status") != "none":
-                rep.notes.append(f"{repo}: card_status '{entry.get('card_status')}' but {path} is absent")
+                rep.notes.append(
+                    f"{repo}: card_status '{entry.get('card_status')}' but no card found "
+                    f"(looked in {', '.join(str(c) for c in candidates)})"
+                )
             continue
         card = _load(path)
         if not isinstance(card, dict):
