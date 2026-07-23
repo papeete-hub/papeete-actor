@@ -17,11 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - name: resolve contracts.pin
-        env:
-          GITHUB_TOKEN: ${{ secrets.CONTRACTS_READ_TOKEN }}
-        run: uv run --no-project --with pyyaml python3 scripts/fetch_contracts.py
       - name: build
+        # No fetch step and no CONTRACTS_READ_TOKEN: the contracts are committed here
+        # (ADR-PA-0001). A release now depends on nothing but this checkout and PyPI.
         run: uv build
       - name: verify the wheel carries its contracts
         run: |

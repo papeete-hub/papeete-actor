@@ -19,21 +19,14 @@ dependencies = ["pyyaml>=6.0"]
 papeete-actor = "papeete_actor.cli:main"
 
 [build-system]
-requires = ["hatchling", "pyyaml>=6.0"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-# The hook resolves contracts.pin before any build, so `pip install git+…` works from a bare
-# checkout. Found the hard way: without it, a git-source install ships a gate with no contracts.
-[tool.hatch.build.hooks.custom]
-path = "hatch_build.py"
-
+# NO BUILD HOOK, NO FETCH, NO TOKEN. The schemas under src/papeete_actor/schemas/ are ORDINARY
+# COMMITTED SOURCE — this package IS the contracts, not a gate that goes looking for them
+# (ADR-PA-0001). They therefore ship in the wheel like any other package data, and a build needs
+# no network and no credential. `pip install papeete-actor` is enough to hold the contracts and
+# enforce them, which is what makes an organisation able to stand up a papeete-actor without any
+# access to the Papeete lab.
 [tool.hatch.build.targets.wheel]
 packages = ["src/papeete_actor"]
-# The schemas are FETCHED, not committed (see contracts.pin) — so they are gitignored, and
-# hatchling would exclude them from the wheel. `artifacts` is the override that says: these are
-# build outputs and they belong in the distribution. A wheel without them is a gate with nothing
-# to enforce, which `papeete-actor contracts` will tell you on the first run.
-artifacts = ["src/papeete_actor/schemas/*.yaml"]
-
-[tool.hatch.build.targets.sdist]
-artifacts = ["src/papeete_actor/schemas/*.yaml"]

@@ -1,8 +1,13 @@
 """Loading the contracts.
 
-They are NOT authored in this repo. ECO.GOV owns them (ADR-ECO-0005); `contracts.pin` names the
-ref, and `scripts/fetch_contracts.py` resolves it into this directory before a build. Nothing here
-is committed — a copy in git is a copy that drifts, and deleting copies is why papeete-actor exists.
+They ARE authored in this repo, under `schemas/`, as ordinary committed source (ADR-PA-0001). The
+package IS the contracts — it is not a gate that goes looking for them. So a build needs no
+network and no credential, which is what lets an organisation stand up a papeete-actor without
+depending on Papeete for anything.
+
+They were previously fetched at build time from a private lab repo. That split spec from checker
+across two repos — the drift generator ADR-ECO-0005 was written to prevent — and made the package
+unbuildable by anyone without read access to the lab.
 
 The path is the same in a source checkout and in an installed wheel, so there is no fallback and
 no second location to reason about.
@@ -30,7 +35,9 @@ def load(kind: str) -> dict:
     if not path.exists():
         raise FileNotFoundError(
             f"{_NAMES[kind]} not found in {_DIR}.\n"
-            f"  In a source checkout: python3 scripts/fetch_contracts.py\n"
+            f"  The contracts are committed source in this package, so this should be "
+            f"unreachable.\n"
+            f"  In a source checkout: the file was deleted — restore it from git.\n"
             f"  In an installed wheel: the build shipped without its contracts — a gate with "
             f"nothing to enforce. Report it against the release."
         )

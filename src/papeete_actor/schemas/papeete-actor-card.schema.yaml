@@ -1,0 +1,254 @@
+# papeete-actor-card.schema.yaml — the papeete-actor card contract.
+#
+# An ACTOR CARD is a repo's self-description: what it can be asked to do, what facts it emits, what
+# facts it pulls and what it does about them, and whose contract it resolves. It is `papeete-actor.yaml` at
+# the papeete-actor's own repo root — the repo IS the papeete-actor's durable state, so the card lives beside the
+# gates and ledgers it names (ADR-ECO-0012).
+#
+# OWNED BY ECO.GOV. Doctrine: ../cards/README.md · ../cards/TEMPLATE.md (the fill-in form) ·
+# ../AGENT-OPERATING-MODEL.md §4 (membrane vs interior), §5 (the direction rule), §10 (the card).
+# Decisions: ADR-ECO-0010 (the shape) · ADR-ECO-0012 (where it lives) · ADR-ECO-0014 (actorhood,
+# terminal tiers, conformance routing) · ADR-ECO-0015 (this revision).
+#
+# HARNESS-INDEPENDENT BY RULE. A card names no agent framework and never moves under `.claude/` or
+# any framework directory. What a papeete-actor is built with is interior; the card is membrane. A harness
+# swap must not touch a card (ADR-ECO-0012 Decision 3).
+#
+# ─── v0 → v1 ──────────────────────────────────────────────────────────────────────────────────
+# Five changes (ADR-ECO-0015; the publication half is ADR-ECO-0016):
+#   1. `requests` is RENAMED `offers`. The old name named the message; the section names an
+#      ability. Fields are unchanged — this is a rename, not a redesign.
+#   2. `requests_out` is REMOVED. It declared an edge that is already visible (a request announces
+#      itself by arriving) and restated the §6 rail table, which is now its sole home.
+#   3. `subscriptions[].how` is REPLACED by `notice:` + `then:`. `how:` held a transport in some
+#      cards and a behaviour in others; the split names both and separates them by determinism.
+#   4. `dependencies` is ADDED — the papeete-actors whose contract I resolve. It absorbs the per-
+#      subscription `pin:`, and RETIRES ADR-ECO-0014 §2's `external: true` (now derived).
+#   5. `publications[].what` is RENAMED `means`, and `publications[].shape` is REQUIRED. See
+#      publication/v2 — a producer cannot see whether its consumer is a script, so it may never
+#      decide that prose alone will serve.
+# A v0 card remains READABLE but is UNMIGRATED, not conformant. `lint_card.py` reports it as such
+# rather than failing it: adoption is each pair's own act and ECO.GOV cannot place a card.
+# ──────────────────────────────────────────────────────────────────────────────────────────────
+
+contract: papeete-actor-card/v1
+
+kind: papeete-actor-card
+
+location: papeete-actor.yaml            # at the repo root. Never under a framework directory.
+
+# THE IDENTITY — who this papeete-actor is. Unchanged from v0.
+identity:
+  required: [card, papeete_actor, tier, name, repo, strategic_class, pair, mailbox]
+  notes:
+    papeete_actor: the ecosystem-layer id (BNK.RLVR, ECO.GOV), or `none` if unregistered
+    repo: exactly one — one repo, one papeete-actor (ADR-ECO-0004 §1)
+    name: the agent's name, or `none` for a human-operated papeete-actor
+    pair: '{human: [roles], agent: <name> | none}'
+
+# ── OFFERS ────────────────────────────────────────────────────────────────────────────────────
+# What I can be asked to do. Renamed from `requests` (v0). The A2A `skills[]` slot: I advertise a
+# door; the CALLER reasons about whether it is the right one. I may refuse — accepting a request
+# never obliges me to honour it, because triage is my exclusive act (WORK-OBSERVABILITY §5).
+#
+# A REQUEST HAS NO RETURN VALUE. It completes as a refusal, or LATER as a publication the sender
+# may have subscribed to (ADR-ECO-0014 §4). That is the delta from A2A, and it follows from
+# asynchrony — not from the handlers being agents.
+offers:
+  required: [id, nature, rail, completion]
+  optional: [from, becomes, ground_truth, note, status]
+  enums:
+    nature: [query, action]     # query = return information | action = decide or do
+    rail: [functional-gap, contract-deviation, engineering-debt]
+  empty_is_legal: true          # a papeete-actor nobody addresses is conformant
+
+# ── PUBLICATIONS ──────────────────────────────────────────────────────────────────────────────
+# Facts I emit: addressed to nobody, refusable by nobody. Published, never delivered — the record
+# IS the event and consumers pull (AGENT-OPERATING-MODEL §5). I never deliver, never acknowledge,
+# and never list my consumers.
+#
+# MEANING AND FORM, ALWAYS BOTH. `means` is prose a human or an agent reasons over; `shape` points
+# at the payload schema a script validates against. Neither substitutes for the other, because I
+# CANNOT SEE WHICH KIND OF CONSUMER I HAVE — subscriptions are consumer-side and listing consumers
+# is forbidden. See publication/v2 `payload`.
+publications:
+  required: [id, means, shape, surface]
+  optional: [breaking_flag, status, note]
+  notes:
+    means: >-
+      the ceiling. Written so a READER can work out whether it concerns them — the self-selection
+      test that achieves fan-out without naming anyone. It states what the fact IS and why it
+      might matter; it MUST NOT state what a consumer should do about it (see `the_meaning_rule`).
+    shape: >-
+      the floor. A path to a producer-owned payload schema, conventionally
+      events/{publication}/schema.yaml. Required (publication/v2) — but the obligation binds at
+      FIRST RECORD, not at declaration: `shape: none` plus a `status:` is legal for a publication
+      whose log is still empty, because a schema for a fact never emitted could only be imagined.
+  empty_is_legal: true          # a terminal tier owes findings, not artefacts (ADR-ECO-0014 §3)
+
+# THE MEANING RULE — the line between a description and a handler.
+#
+#   A publication supplies MEANING. It never supplies INTENT.
+#
+# In MCP a server says what a tool IS and never what the client should do with it: meaning is
+# producer-owned, the decision to act is consumer-owned. A publication reading "Urbanist, refine
+# the capability when you see this" would put a producer in charge of a consumer's behaviour —
+# strictly worse than the handler it replaces, because a handler at least lives in the consumer's
+# repo under the consumer's review. Intent lives in `subscriptions[].then`, and nowhere else.
+the_meaning_rule:
+  producer_supplies: meaning
+  consumer_declares: intent
+  nobody_writes: a handler
+
+# ── SUBSCRIPTIONS ─────────────────────────────────────────────────────────────────────────────
+# Facts I pull, and what I do about them. Declared BY ME, about someone else's publication — a
+# producer listing its subscribers is the coupling ADR-ECO-0004 Decision 4 forbids. Fan-out is the
+# JOIN of publications against subscriptions across all cards.
+#
+# CONSUMPTION BY ANY MECHANISM IS A SUBSCRIPTION (ADR-ECO-0014 §5): pulled, vendored, sibling
+# path, image pin, generated output. Undeclared consumption is a conformance defect owned by the
+# consumer — the only class that causes an outage, because the producer cannot see the edge it is
+# about to break.
+subscriptions:
+  required: [to, notice, then]
+  optional: [scoped_to, status, note]
+  notes:
+    to: '<source>/<publication id>, where source is an id declared in `dependencies`'
+
+  # THE MEMBRANE. Deterministic by rule. "Has anything appeared after my position?" is cheap
+  # deterministically and unreliable from a model — and if a model decides what it has already
+  # seen, consumption stops being idempotent and facts are silently lost or replayed.
+  notice:
+    required: [binding, cadence]
+    optional: [position, use]
+    notes:
+      binding: >-
+        the swappable part (publication/v2 `bindings`). Switching transport later is a new
+        binding, not a new subscription.
+      position: >-
+        OPAQUE TO THE READER — a git ref today, a broker offset later. The opacity is what buys
+        the migration; a subscription that parses its own position has smuggled git into the
+        contract.
+      use: >-
+        the consumer group. Several positions over one publication, one per purpose — keyed by
+        (publication, use), never by source, which is the shape that CANNOT migrate.
+
+  # MY INTENT. Mine alone to author. The presence of `run:`/`intent:` IS the discriminator of how
+  # this papeete-actor reacts — there is deliberately no `disposition:` label, which would be a second
+  # source of truth free to drift from the fields it describes.
+  then:
+    required: [outcome]
+    at_least_one_of: [run, intent]
+    optional: [delegates_to, note]
+    enums:
+      outcome: [records, request, publication]
+    notes:
+      run: >-
+        a deterministic reaction — a path to the gate or script that runs. Naming it here does NOT
+        leak the interior: a subscription's reaction IS the input bookend, which §4 places at the
+        membrane. What §4 forbids is expanding `gates:` into an inventory of interior tools.
+      intent: >-
+        a judged reaction — prose stating what I do about facts like this. Consumer-authored,
+        under the consumer's own review.
+      both: >-
+        legal and common. `run` is then the bookend and `intent` reasons over what it produced —
+        the live shape in reliever-design, where a deterministic detector feeds a judged triage.
+      outcome: >-
+        CLOSED AT THREE. The only things a papeete-actor may produce. The enum is what stops `then` from
+        becoming an escape hatch that swallows the direction rule. `request` names no recipient:
+        the rail determines the owner (AGENT-OPERATING-MODEL §6).
+
+# ── DEPENDENCIES ──────────────────────────────────────────────────────────────────────────────
+# The papeete-actors whose contract I resolve. Consumer-side by rule, exactly like subscriptions — this
+# generalises ADR-ECO-0014 §5 from facts to papeete-actors.
+#
+# IT IS NOT A ROUTING TABLE. It says whose card I READ, never whom I message. The v0 `requests_out`
+# said the latter and was removed: a request declares itself by arriving in the recipient's mailbox
+# carrying the envelope, so there is no invisible edge for a card to disclose.
+#
+# IT DOES NOT RESTATE THE ADDRESS. ecosystem/registry.yaml is the sole authority for WHERE a card
+# lives (`papeete_actor:`, `card:`, `card_status:`) — the role A2A's well-known path plays. Copying a card
+# path here would reintroduce exactly the drift the registry's authority boundary exists to remove.
+dependencies:
+  required: [id, ref]
+  notes:
+    id: >-
+      a papeete-actor id (BNK.RSOL) or a repo path (papeete-hub/kpack), resolved against
+      ecosystem/registry.yaml.
+    ref: >-
+      where I stand on their contract: a pin (v2.0.0, settler-v0.3.0) or a floating ref (main).
+      See `the_pin_rule`.
+
+# THE PIN RULE — the obligation follows the CONSUMER KIND, which only the consumer knows.
+#
+#   A subscription declaring `then.run` over a STATE-TRANSFER binding MUST resolve its source to a
+#   PINNED `dependencies[].ref`. Over a REFERENCE binding it must NOT.
+#
+# A scripted consumer that BUILDS ON upstream content breaks silently when that content moves —
+# it is the case `breaking` exists to announce, and a pin is what makes the break visible as a
+# deliberate bump rather than a mystery. So `ref: main` under such a subscription is a defect.
+#
+# YOU CANNOT PIN A DRIFT-GUARD, and the first draft of this rule tried to. A check whose output IS
+# the difference — "has the authority moved away from what I recorded?" — must read HEAD, or it
+# compares a pin against itself and is tautologically green. That failure is already documented in
+# this ecosystem twice, in reliever-business's and reliever-design's own cards: *"the check proves
+# IDENTITY against the pin, never FRESHNESS against upstream"*. Requiring a pin here would have
+# MANDATED the bug those two cards report.
+#
+# The line is what the run DOES with the difference:
+#   consumes the content  -> must pin   (it breaks silently)
+#   observes the difference -> must not  (a pin blinds it)
+the_pin_rule:
+  applies_when: a subscription declares `then.run` over a state-transfer binding
+  requires: ref is a pin, not a floating ref
+  bindings:
+    state_transfer: [event-log, vendor, image, package]   # content crosses; pin it
+    reference: [by-reference, repo-read]                  # nothing crosses; pinning blinds the check
+  exempt_reason_required: true    # a reference binding states `position: none` and why
+
+# EXTERNALITY IS DERIVED, NEVER DECLARED.
+#
+# ADR-ECO-0014 §2 introduced `external: true` so the join would not report a false dangling against
+# a producer outside the papeete-actor set (papeete-hub/kpack). That flag is RETIRED — but the derivation
+# that replaces it keys on `card_status`, NOT on `papeete_actor:`.
+#
+# The first draft used `papeete_actor:` and misclassified two of seven dependencies immediately.
+# `reliever-implementation` carries `papeete_actor: none` because it has no BNK.* context id — an open
+# question on its own card — yet its card is ADOPTED; it is a papeete-actor. `settler` carries
+# `papeete_actor: none` too, and ADR-ECO-0014 §1 ruled it IS a papeete-actor that has not written its card yet.
+# Calling either "external" would silence exactly the defect the join exists to surface.
+externality:
+  derived_from: registry.yaml `card_status`
+  rules:
+    external: entry has no `card`/`card_status` at all — an engine or artifact, never a papeete-actor
+    papeete_actor: 'card_status: adopted | pending — a papeete-actor, whatever its `papeete_actor:` id says'
+    dangling: 'card_status: none — a papeete-actor that owes a card. NOT external (settler, issue #13)'
+  reported_as: external | dangling      # the distinction the join is for
+
+# ── THE REST — unchanged from v0 ──────────────────────────────────────────────────────────────
+remainder:
+  required: [records, gates, work_surface, autonomy]
+  optional: [hard_boundary, open]
+  notes:
+    records: owned state — the store of record, mine alone to write
+    gates: >-
+      THE BOOKENDS ONLY — the output gate and the input gate. Every one of the five v0 adoptions
+      initially expanded this into an inventory of tools/*.py and all five trimmed it back. What
+      runs inside the box is decoration; a consumer must not be able to tell which internal
+      validators exist (AGENT-OPERATING-MODEL §4).
+    autonomy: 'level-0 — every write through a human-reviewed PR, until a card says otherwise'
+    open: real questions, not to-dos. A card full of confident fiction is worse than one with holes.
+
+# ── CONFORMANCE ───────────────────────────────────────────────────────────────────────────────
+# The classes `papeete-actor check` carries (ADR-ECO-0014 §5), computed by joining cards against each
+# other and against the registry. `scripts/lint_card.py` validates ONE card against this schema;
+# the join across cards is papeete-actor check, which does not exist yet.
+conformance:
+  dangling_subscription: nobody publishes that id
+  unsubscribed_publication: information no one pulls — dead output, or a missing consumer
+  undeclared_consumption: >-
+    a cross-repo read no card declares. NOT decidable from cards alone, by construction — the
+    evidence is in consumer code. Detection is a heuristic plus the honesty rule; a heuristic
+    finding is a prompt to declare, never an automatic verdict.
+  unschematised_publication: a publication declaring no `shape` (publication/v2)
+  unpinned_scripted_subscription: a `then.run` subscription resolving to a floating ref

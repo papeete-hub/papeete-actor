@@ -1,0 +1,171 @@
+# papeete-actor.yaml — this repo's own card (papeete-actor-card/v1).
+#
+# THE RECURSION IS DELIBERATE. This repo ships the contract this file conforms to, and the gate
+# that checks it. CI runs `papeete-actor lint-card papeete-actor.yaml` on every push: if the
+# schemas failed to ship in the wheel, or the gate could not read them, this check fails. It is the
+# cheapest end-to-end proof the package works, and it is also the honest position — a repo that
+# publishes an actorhood contract and does not itself hold a card would be exempting the author
+# from the rule (ADR-ECO-0014 §6, applied to itself).
+#
+# Contract: src/papeete_actor/schemas/papeete-actor-card.schema.yaml — in this repo (ADR-PA-0001).
+
+card: papeete-actor-card/v1
+papeete_actor: none                  # no ECO.* / BNK.* context id — the same position banking-tech
+                                     # and reliever-implementation hold. Registered by repo path.
+tier: none                           # not one of the five — this is ecosystem-layer equipment
+name: none                           # human-operated; no agent
+repo: papeete-hub/papeete-actor
+strategic_class: published-policy    # the contracts are published policy every actor pins
+pair:
+  human: [architect]
+  agent: none
+
+mailbox:
+  contract: inter-agent-message/v0
+  binding: github-issue
+  address: papeete-hub/papeete-actor/issues
+  delivery: at-least-once
+  idempotency: [type, subject]
+  push: false
+  status: >-
+    NEWLY ADDRESSABLE, and it closes a hole ECO.GOV's own card names. "No rail carries 'your
+    contract is unsatisfiable in my repo' back to the contract author" was true while the contracts
+    sat in a read-only supervisor with no inbound rail. They now sit in a repo with a mailbox.
+
+# ── offers: what I can be asked to do ───────────────────────────────────
+offers:
+  - id: contract-deviation
+    nature: action
+    rail: contract-deviation
+    completion: >-
+      a revision of the schema, published as a new contract version — or a refusal saying why the
+      shape is right and the reported case is out of scope.
+    from: any actor whose card cannot express something its repo really does
+    ground_truth: >-
+      the case that motivated actor-card/v1 — five adopted v0 cards each invented an ad-hoc field
+      (`authority`, `caveat`, `outbox`) because the contract enumerated nothing. Those were
+      deviations nobody had a door for; this is the door.
+    note: >-
+      A CONTRACT THAT CANNOT BE CONTRADICTED IS THE FAILURE ECO.GOV WROTE DOWN ABOUT ITSELF. This
+      offer exists so the author of a shape can be told the shape is wrong, by the pair that hit it.
+
+# ── publications: facts I emit ──────────────────────────────────────────
+# These three moved here from ECO.GOV with the schemas themselves (ADR-PA-0001 / ADR-ECO-0019).
+# A revision to any of them is consumed by every actor in the ecosystem, by reference — and
+# reference is a pin, so every one of them carries a breaking_flag obligation.
+publications:
+  - id: papeete-actor-card-contract
+    means: >-
+      papeete-actor-card/v1 — the four sections a card carries (offers, publications, subscriptions,
+      dependencies) and the rules that keep each one's owner straight: a producer supplies meaning,
+      a consumer declares intent, nobody writes a handler. Every repo that is a papeete-actor
+      declares this contract's version in its own card, so a revision here moves a shape the whole
+      ecosystem is pinned to.
+    shape: none
+    status: >-
+      no record ever emitted. Owed, and sharper than it was: v1 is a breaking change to a shape
+      seven repos declare, and the rename in ADR-ECO-0018 moved both the contract name and the card
+      filename. Nothing announces either. Inherited unpaid from ECO.GOV rather than fixed by moving.
+    surface: src/papeete_actor/schemas/papeete-actor-card.schema.yaml
+    breaking_flag: >-
+      REQUIRED — every card in the ecosystem declares this contract's version, which is a pin by
+      reference.
+  - id: message-contract
+    means: >-
+      inter-agent-message/v0 — the envelope that makes an artifact a message, the finding payload it
+      wraps, and the bindings it rides. An artifact is a message iff it carries the envelope.
+    shape: none
+    status: no record ever emitted; v0 predates the outbox contract.
+    surface: src/papeete_actor/schemas/message.schema.yaml
+  - id: publication-contract
+    means: >-
+      publication/v2 — the transactional outbox, the request/publication binding split, the pinning
+      rule, the per-publication payload schema and the human-view projection.
+    shape: none
+    status: >-
+      no record ever emitted HERE. v1 and v2 were announced from ECO.GOV's log, which is where the
+      records for them live; this publication inherits the id, not the history.
+    surface: src/papeete_actor/schemas/publication.schema.yaml
+    breaking_flag: >-
+      REQUIRED — consumed by reference, and at least three actors have built gates encoding this
+      contract's shape.
+  - id: gates
+    means: >-
+      the conformance gates for all three contracts plus the cross-card join, as one installable
+      package. A consumer pins a version instead of vendoring a schema and byte-diffing it, and
+      needs no credential to anything: the contracts are in the wheel.
+    shape: none
+    status: >-
+      PLANNED as a PyPI release. The package builds and installs from a clean checkout with no
+      network beyond the index; nothing is published yet — the release lane waits on a pypi.org
+      pending publisher.
+    surface: pyproject.toml; src/papeete_actor/ (PyPI name `papeete-actor`)
+    breaking_flag: >-
+      REQUIRED once released — consumers pin `papeete-actor==`, which is a pin by any reading of
+      the pinning rule.
+
+# ── subscriptions: what I pull, and what I do about it ──────────────────
+subscriptions:
+  - to: ECO.GOV/ecosystem-registry
+    notice:
+      binding: by-reference          # the registry is read, never copied
+      position: none                 # read at HEAD — the join is over the ecosystem as it stands
+      use: cross-card-join
+      cadence: on demand
+    then:
+      run: src/papeete_actor/check.py
+      outcome: records
+      note: >-
+        `papeete-actor check` walks the registry to find every card, then joins publications against
+        subscriptions and dependencies. It reads the registry; it never writes to it. `position:
+        none` is the reference-binding exemption in `the_pin_rule` — a join pinned to yesterday's
+        registry would report yesterday's ecosystem.
+
+# ── dependencies: whose contract I resolve, and at what ref ─────────────
+# ONE, AND IT IS NOT THE CONTRACTS. Before ADR-PA-0001 this repo resolved ECO.GOV's contracts at a
+# pinned commit and could not build without read access to a private lab repo. It now depends on
+# ECO.GOV for exactly one thing — the registry, and only to locate cards for the cross-card join.
+# Nothing in a BUILD or an INSTALL touches it, which is what makes this package standalone.
+dependencies:
+  - id: ECO.GOV
+    ref: main                        # reference binding, read at HEAD — see the_pin_rule
+
+records:
+  - what: the three ecosystem contracts — the store of record, mine alone to write
+    where: src/papeete_actor/schemas/
+  - what: the gates and the cross-card join
+    where: src/papeete_actor/
+  - what: this repo's decision log
+    where: adr/ (ADR-PA-*)
+
+gates:
+  - papeete-actor lint-card — one card against papeete-actor-card/v1, including this repo's own
+  - papeete-actor check — the cross-card join over every card in the registry
+  - ci.yml — the wheel must carry its contracts, and must lint this card with them
+
+hard_boundary: >-
+  the contracts and their gates, nothing else. This repo does not own the ecosystem's map, its
+  operating model or its topology — those stay with ECO.GOV, and a decision about them recorded
+  here would be the altitude violation ADR-ECO-0007 names.
+work_surface: none                   # no work.yaml yet — not conformant with work-observability/v0
+autonomy: level-0                    # every write through a human-reviewed PR
+
+open:
+  - >-
+    All four publications carry `shape: none`, and one of them is the papeete-actor-card contract
+    itself — whose v1 is a breaking change to a shape seven repos declare, announced nowhere. This
+    debt was inherited from ECO.GOV along with the schemas; moving the file did not pay it, and
+    this repo is now the one that owes it.
+  - >-
+    This repo publishes an actorhood contract and is not conformant with work-observability/v0 —
+    no work.yaml, no detection ledger, no kanban. The same nonconformity ECO.GOV records about
+    itself, inherited with the contracts.
+  - >-
+    `papeete_actor: none`. Should ecosystem-layer equipment carry an `ECO.*` id, or is a repo path
+    the right identity for something that is not one of the five tiers? ADR-ECO-0014 §1 ruled the
+    actorhood test is about repo/pair/state/address, not about holding an id — so this is
+    conformant, and still reads like a gap.
+  - >-
+    Does the template that scaffolds a new papeete-actor ship here as `papeete-actor new`?
+    Sovereignty makes it possible; nothing yet makes it right, and the five facets that would
+    parameterise such a template are undecided (ADR-ECO-0018 §4).

@@ -1,29 +1,28 @@
 name: ci
 on: [push, pull_request]
 
+# NO CREDENTIAL. This pipeline reaches nothing outside its own checkout — the contracts are
+# committed source here (ADR-PA-0001), not something fetched from a private sibling. The previous
+# design needed a CONTRACTS_READ_TOKEN to read papeete-foundry/ecosystem-governance, and every run
+# of it failed because that secret was never set: a distribution artifact that cannot be built
+# without a credential to the lab is not a distribution artifact.
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - name: resolve contracts.pin
-        # The contracts live in a private sibling repo. This is the ONE pipeline that needs read
-        # access to it — the difference between this design and asking every consumer to auth.
-        #
-        # --no-project IS LOAD-BEARING. Without it `uv run` installs THIS project first, which
-        # fires the hatch build hook, which resolves the pin itself — so this step never ran its
-        # own script and the failure surfaced from inside a build backend traceback instead of
-        # from here. With it, the fetch happens here and the later `uv build` finds the contracts
-        # already present and no-ops. One network fetch, attributed to the step that asked for it.
-        env:
-          GITHUB_TOKEN: ${{ secrets.CONTRACTS_READ_TOKEN }}
-        run: uv run --no-project --with pyyaml python3 scripts/fetch_contracts.py
       - name: build
         run: uv build
       - name: the wheel must carry its contracts
         # A wheel that installs cleanly and enforces nothing is the failure mode worth a gate.
+        # It was a real risk while the schemas were build output; it is a cheap assertion now.
         run: |
           uv venv /tmp/probe
           /tmp/probe/bin/python -m pip install -q dist/*.whl
           /tmp/probe/bin/papeete-actor contracts
+      - name: the gates must run
+        # The package validates its own card with its own contract — the smallest end-to-end
+        # proof that the schemas shipped and the gate can read them.
+        run: /tmp/probe/bin/papeete-actor lint-card papeete-actor.yaml

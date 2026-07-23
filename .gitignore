@@ -1,7 +1,3 @@
-# The contracts are fetched at build time from the ref in contracts.pin — never committed.
-# A copy in git is a copy that drifts, which is the thing this package exists to remove.
-src/papeete_actor/schemas/
-
 dist/
 *.egg-info/
 __pycache__/

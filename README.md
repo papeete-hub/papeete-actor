@@ -41,19 +41,26 @@ has already seen, consumption stops being idempotent. *"Does this fact matter to
 irreducibly judgement. A subscription declares both halves separately, and `papeete-actor` checks that
 the deterministic half stays deterministic.
 
-## The contracts are not in this repo
+## The contracts are in this repo
 
-They are owned by `papeete-foundry/ecosystem-governance` and **fetched at build time** from the ref
-in [`contracts.pin`](./contracts.pin). Nothing under `src/papeete_actor/schemas/` is committed: a copy in
-git is a copy that drifts, and deleting copies is the entire reason this package exists rather than
-each repo vendoring a script and byte-diffing it.
+[`src/papeete_actor/schemas/`](./src/papeete_actor/schemas/) — ordinary committed source. **The
+package IS the contracts**, not a gate that goes looking for them
+([ADR-PA-0001](./adr/ADR-PA-0001-papeete-actor-is-sovereign.md)).
+
+That is what makes an organisation able to stand up a papeete-actor without depending on Papeete for
+anything. The previous design fetched the schemas at build time from a private lab repo, which meant
+a build needed a credential nobody outside the lab could have — and spec and gate could not change
+in one commit, the drift generator `ADR-ECO-0005` was written to prevent.
 
 Every gate **loads** its schema. None hard-codes a field, an enum, or a rule.
 
 ```bash
-python3 scripts/fetch_contracts.py   # resolves contracts.pin (needs read access to the source repo)
-uv build
+uv build      # no network, no token, no fetch step
 ```
+
+`papeete-actor` also holds its own card, [`papeete-actor.yaml`](./papeete-actor.yaml), under the
+contract it ships — and CI lints it on every push. If the schemas failed to ship in the wheel, or a
+gate could not read them, that check fails.
 
 ## Versioning
 
