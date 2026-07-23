@@ -18,10 +18,23 @@ from .report import Report
 from .schemas import contracts_dir, load
 
 
+REGISTRY_REL = Path("ecosystem-governance") / "ecosystem" / "registry.yaml"
+
+
+def _registry_candidates(root: Path):
+    """Where ecosystem-governance's registry may sit relative to `root`.
+
+    The ecosystem spans two orgs, so `root` may be one org's directory (repos are siblings), the
+    parent holding both (repos are under <org>/), or a repo inside one. Same reason `check` tries
+    several card paths — a flat sibling layout is one shape among three."""
+    return [root / REGISTRY_REL, root / "papeete-foundry" / REGISTRY_REL,
+            root.parent / "papeete-foundry" / REGISTRY_REL]
+
+
 def _registry(explicit: Path | None, near: Path) -> dict | None:
     """Find ecosystem/registry.yaml — given, or beside the cards being checked. Absent in an
     isolated checkout, where dependency resolution is skipped rather than failed."""
-    for cand in (explicit, near / "ecosystem-governance" / "ecosystem" / "registry.yaml"):
+    for cand in ([explicit] if explicit else []) + _registry_candidates(near):
         if cand and Path(cand).exists():
             return yaml.safe_load(Path(cand).read_text())
     return None
@@ -71,7 +84,11 @@ def cmd_lint_publication(args) -> int:
 
 def cmd_check(args) -> int:
     workspace = Path(args.workspace).resolve()
-    registry = Path(args.registry) if args.registry else workspace / "ecosystem-governance" / "ecosystem" / "registry.yaml"
+    if args.registry:
+        registry = Path(args.registry)
+    else:
+        cands = _registry_candidates(workspace)
+        registry = next((c for c in cands if c.exists()), cands[0])
     return check.run(workspace, registry).emit("papeete-actor check")
 
 
