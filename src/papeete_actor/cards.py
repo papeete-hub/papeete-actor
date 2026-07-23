@@ -41,18 +41,29 @@ def registry_classes(reg: dict) -> dict[str, str]:
 def resolve_source(to: str, known) -> str:
     """The source id a subscription's `to` names.
 
-    Two shapes share one field. `BNK.KNOW/meta-model` is <actor>/<publication>, so the source is
-    the prefix. `papeete-hub/kpack` is a whole artifact with no publication id at all — the source
-    is the ENTIRE string, and splitting it yields the org, which resolves to nothing. Naively
-    taking the first segment reported papeete-hub/kpack as a dangling subscription in both repos
-    that hold it, when ADR-ECO-0014 §2 exists precisely so it is reported as external.
+    THREE shapes share one field, and the separator is ambiguous in all of them because a source id
+    may itself contain a slash:
 
-    So: prefer the whole string when it is a known id; otherwise the prefix.
+        BNK.KNOW/meta-model                     <actor>/<publication>      -> BNK.KNOW
+        papeete-hub/kpack                       a whole artifact, no publication id
+                                                                           -> papeete-hub/kpack
+        papeete-hub/papeete-actor/<publication> <repo-path>/<publication>  -> papeete-hub/papeete-actor
+
+    So: take the LONGEST prefix that is a known id, and fall back to the first segment when none is.
+
+    Naively splitting on the first slash breaks the second and third shapes — it yields the org,
+    which resolves to nothing. That reported papeete-hub/kpack as a dangling subscription in both
+    repos holding it, when ADR-ECO-0014 §2 exists precisely so it is reported as external. The
+    third shape appeared when ECO.GOV began consuming a contract from a repo-path source
+    (ADR-ECO-0019) and this function reported `papeete-hub` as an undeclared dependency.
     """
     to = str(to)
-    if to in known:
-        return to
-    return to.split("/", 1)[0]
+    parts = to.split("/")
+    for cut in range(len(parts), 0, -1):
+        candidate = "/".join(parts[:cut])
+        if candidate in known:
+            return candidate
+    return parts[0]
 
 
 def _require(d: dict, keys, where: str, rep: Report) -> None:
