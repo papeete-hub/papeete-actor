@@ -76,6 +76,50 @@ papeete-actor 0.1.0  —  contracts from …/site-packages/papeete_actor/schemas
 
 A card declares the **contract** version; your CI pins the **tool**.
 
+## Releasing
+
+Tag-triggered, via [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (OIDC).
+**No API token is stored anywhere** — GitHub mints a short-lived OIDC token per run and PyPI trades
+it for an upload token. There is nothing to rotate and nothing to leak.
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0     # .github/workflows/release.yml does the rest
+```
+
+### One-time setup
+
+**1. A pending publisher on PyPI.** The project does not exist yet, so it is registered from the
+publisher side rather than by a first manual upload. At
+<https://pypi.org/manage/account/publishing/>, add a **GitHub** pending publisher:
+
+| Field | Value |
+|---|---|
+| PyPI Project Name | `papeete-actor` |
+| Owner | `papeete-hub` |
+| Repository name | `papeete-actor` |
+| Workflow name | `release.yml` |
+| Environment name | `pypi` |
+
+All five must match exactly — PyPI checks the OIDC claims against them and rejects the upload
+otherwise. `release.yml` already declares `permissions: id-token: write` and
+`environment: pypi`, which is what makes those claims present.
+
+**2. The `pypi` GitHub environment**, which exists on this repo. Optional protection rules worth
+considering, since a release is irreversible (PyPI does not allow re-uploading a version):
+required reviewers, and restricting deployments to tags matching `v*`.
+
+**A private repo is fine.** Trusted Publishing authenticates the *workflow*, not the source, so
+nothing here needs to be public for the package to be.
+
+After the first successful release PyPI converts the pending publisher into a normal one
+automatically; no second setup step.
+
+### What a release asserts
+
+The workflow builds, installs the wheel into a clean venv, and runs `papeete-actor contracts`
+before publishing — so a build that lost its schemas fails the release instead of shipping a gate
+that enforces nothing.
+
 ## What it does not do
 
 `papeete-actor check` computes four conformance classes — dangling subscription, unsubscribed
