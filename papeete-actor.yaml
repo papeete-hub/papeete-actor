@@ -5,7 +5,7 @@
 # schemas failed to ship in the wheel, or the gate could not read them, this check fails. It is the
 # cheapest end-to-end proof the package works, and it is also the honest position — a repo that
 # publishes an actorhood contract and does not itself hold a card would be exempting the author
-# from the rule (ADR-ECO-0014 §6, applied to itself).
+# from the rule (ADR-PA-0009 §6, applied to itself).
 #
 # Contract: src/papeete_actor/schemas/papeete-actor-card.schema.yaml — in this repo (ADR-PA-0001).
 
@@ -64,7 +64,7 @@ publications:
     shape: none
     status: >-
       no record ever emitted. Owed, and sharper than it was: v1 is a breaking change to a shape
-      seven repos declare, and the rename in ADR-ECO-0018 moved both the contract name and the card
+      seven repos declare, and the rename in ADR-PA-0013 moved both the contract name and the card
       filename. Nothing announces either. Inherited unpaid from ECO.GOV rather than fixed by moving.
     surface: src/papeete_actor/schemas/papeete-actor-card.schema.yaml
     breaking_flag: >-
@@ -96,13 +96,10 @@ publications:
       needs no credential to anything: the contracts are in the wheel.
     shape: none
     status: >-
-      READY, UNRELEASED. The package builds and installs from a clean checkout with no network
-      beyond the index, CI is green, and both halves of the PyPI setup are in place as of
-      2026-07-23 — the pending publisher is registered and the `pypi` environment exists. Nothing
-      blocks a release now except pushing a `v*` tag, and nothing is published: `papeete-actor` is
-      still unclaimed on PyPI. The one consumer that exists, ECO.GOV, therefore pins a git sha
-      rather than a version — a pin that satisfies `the_pin_rule` and carries no ordering, so a
-      reader cannot tell whether they are behind. That closes on first release.
+      RELEASED — papeete-actor 0.1.0 on PyPI, 2026-07-23, via Trusted Publishing with no stored
+      credential. `pip install papeete-actor` in a clean venv with no access to any Papeete repo
+      yields the contracts and the gates, which is the autonomy claim of ADR-PA-0001 demonstrated
+      rather than asserted. ECO.GOV, the one consumer that exists, pins `papeete-actor==0.1.0`.
     surface: pyproject.toml; src/papeete_actor/ (PyPI name `papeete-actor`)
     breaking_flag: >-
       REQUIRED once released — consumers pin `papeete-actor==`, which is a pin by any reading of
@@ -140,7 +137,9 @@ records:
   - what: the gates and the cross-card join
     where: src/papeete_actor/
   - what: this repo's decision log
-    where: adr/ (ADR-PA-*)
+    where: adr/ (ADR-PA-*), incl. eleven records moved from ECO.GOV by ADR-PA-0014
+  - what: the doctrine — how to design a papeete-actor, not only validate one
+    where: doc/ (operating model, messages, work-observability, the card doctrine + template)
 
 gates:
   - papeete-actor lint-card — one card against papeete-actor-card/v1, including this repo's own
@@ -166,10 +165,10 @@ open:
     itself, inherited with the contracts.
   - >-
     `papeete_actor: none`. Should ecosystem-layer equipment carry an `ECO.*` id, or is a repo path
-    the right identity for something that is not one of the five tiers? ADR-ECO-0014 §1 ruled the
+    the right identity for something that is not one of the five tiers? ADR-PA-0009 §1 ruled the
     actorhood test is about repo/pair/state/address, not about holding an id — so this is
     conformant, and still reads like a gap.
   - >-
     Does the template that scaffolds a new papeete-actor ship here as `papeete-actor new`?
     Sovereignty makes it possible; nothing yet makes it right, and the five facets that would
-    parameterise such a template are undecided (ADR-ECO-0018 §4).
+    parameterise such a template are undecided (ADR-PA-0013 §4).
