@@ -26,9 +26,18 @@ from .schemas import load
 
 
 def _load(path: Path):
+    """A YAML file, or None when it is absent or unparseable.
+
+    OSError IS CAUGHT TOO, and it is not defensive padding. `run` already reports "missing or
+    unparseable" for a falsy result, but only the unparseable half could ever reach it: a missing
+    registry raised FileNotFoundError out of `read_text` and past that branch entirely. `cmd_check`
+    falls back to a candidate path that does NOT exist when it finds no registry, so the ordinary
+    case — running the join in a checkout without the lab repo beside it — hit the traceback path
+    and printed a bare errno instead of the sentence written for it.
+    """
     try:
         return yaml.safe_load(path.read_text())
-    except yaml.YAMLError:
+    except (yaml.YAMLError, OSError):
         return None
 
 

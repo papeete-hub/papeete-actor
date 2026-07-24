@@ -1,0 +1,28 @@
+publication: gates
+at: 2026-07-24
+ref: 0.4.0
+breaking: true
+summary: >-
+  papeete-actor 0.4.0 — papeete-actor-card/v1 moves (required `releases`, required
+  `offers[].means`), the deployment profile arrives, and `check` refuses the retired `actor:` key.
+  A card or a pipeline that passed at 0.1.0 may fail here.
+evidence: >-
+  ADR-PA-0010, ADR-PA-0014, ADR-PA-0015, ADR-PA-0016. What a consumer moving the pin must expect:
+
+    THE CARD CONTRACT      see message `papeete-actor-card-contract/0.4.0` — required `releases`,
+                           required `offers[].means`, `rail` profiled. Cards fail on upgrade.
+    THE MESSAGE CONTRACT   see `message-contract/0.4.0` — a widening, breaks nothing.
+    check                  a card carrying the retired `actor:` key is now a HARD ERROR rather
+                           than silently resolved. Deliberate: resolving it left the card in the
+                           join under its repo name and turned every `<id>/<publication>`
+                           subscription against it into a false DANGLING-SUBSCRIPTION — a
+                           confident, precise, wrong answer (ADR-PA-0015).
+    the CLI                `--profile` added to lint-card, lint-message and contracts. Omitted,
+                           the shipped reference profile is used and nothing changes.
+    the library surface    `cards.lint(path)` unchanged in its one-positional-argument form, and
+                           now tested as such — papeete-actor-simple embeds it (ADR-PAS-0004).
+
+  0.2.0 AND 0.3.0 WERE NEVER PUBLISHED. The version in pyproject.toml moved three times between
+  0.1.0 and here without a tag, so no consumer could resolve those numbers and no record is owed
+  for them. This record covers every contract change since 0.1.0 in one transition, which is what
+  a consumer moving the pin actually experiences.

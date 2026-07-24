@@ -11,6 +11,7 @@ deployment's rails, and the grammar of its taxonomy. `--profile FILE` on the gat
 the shipped reference profile is the default (ADR-PA-0016).
 """
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -38,22 +39,55 @@ def _registry_candidates(root: Path):
             root.parent / "papeete-foundry" / REGISTRY_REL]
 
 
-def _registry(explicit: Path | None, near: Path) -> dict | None:
-    """Find ecosystem/registry.yaml — given, or beside the cards being checked. Absent in an
-    isolated checkout, where dependency resolution is skipped rather than failed."""
-    for cand in ([explicit] if explicit else []) + _registry_candidates(near):
-        if cand and Path(cand).exists():
-            return yaml.safe_load(Path(cand).read_text())
-    return None
+def _search_root(cards) -> Path:
+    """The directory registry discovery starts from: the deepest ancestor holding every card.
+
+    NEVER `cards[0]`, and never a fixed number of hops. It was both, and the two together made the
+    gate's VERDICT DEPEND ON ARGUMENT ORDER — the same set of cards passed or failed according to
+    which one happened to be listed first:
+
+        lint-card own.yaml examples/a/card.yaml   -> root two levels above own.yaml   -> registry
+                                                     found -> 'EXA.A resolves nowhere' -> FAIL
+        lint-card examples/a/card.yaml own.yaml   -> root two levels above the example -> no
+                                                     registry -> resolution skipped     -> PASS
+
+    A conformance gate whose answer moves with the order of its arguments is the confident,
+    precise, wrong answer this tool exists to prevent, so the root is now derived from ALL of them.
+    `parent.parent` was also only ever right for a card at a repo root; for one nested at
+    examples/actors/<name>/ it names a directory of no significance.
+    """
+    parents = [Path(c).resolve().parent for c in cards]
+    return Path(os.path.commonpath([str(p) for p in parents]))
+
+
+def _registry(explicit: Path | None, near: Path):
+    """Find ecosystem/registry.yaml — given, or above the cards being checked.
+
+    Walks UP from `near`, because the registry sits in a sibling repo and how far up that is
+    depends on where the cards live: a repo root is one hop from the workspace, a nested example
+    is three. Returns (registry, path) so the caller can say WHICH index produced its verdict —
+    "resolves nowhere in registry.yaml" is unactionable when the reader cannot tell which
+    registry.yaml was read. Absent in an isolated checkout, where dependency resolution is
+    skipped rather than failed.
+    """
+    if explicit:
+        return (yaml.safe_load(Path(explicit).read_text()), Path(explicit)) \
+            if Path(explicit).exists() else (None, None)
+    for base in [near, *near.parents]:
+        for cand in _registry_candidates(base):
+            if cand.exists():
+                return yaml.safe_load(cand.read_text()), cand
+    return None, None
 
 
 def cmd_lint_card(args) -> int:
     schema = load("papeete-actor-card")
     prof = profile.load(args.profile)
-    workspace = Path(args.cards[0]).resolve().parent.parent
-    reg = _registry(args.registry, workspace)
+    reg, reg_path = _registry(args.registry, _search_root(args.cards))
     if reg is None:
         print("  note registry.yaml not found — dependency resolution not checked")
+    else:
+        print(f"  note dependencies resolved against {reg_path}")
     rep = Report()
     for p in args.cards:
         path = Path(p)
