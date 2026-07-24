@@ -36,12 +36,29 @@ payload:
     - resolve    # suggested skill or tool
     - origin     # provenance of the route: "<repo>/<ledger> @ <ref>" — set by the renderer
   enums:
-    rail: [functional-gap, contract-deviation, engineering-debt]
     severity: [high, medium, low]
-  # `scope` is a capability node named EXPLICITLY (WORK-OBSERVABILITY §3 scoping rule), well-formed
-  # at exactly one grain. Because ids encode the hierarchy as prefixes, this regex IS the grain
-  # ladder: context BNK.RLVR | zone BNK.RLVR.CAP.BSP | L1 …BSP.001 | L2 …BSP.001.ENV
-  scope_grammar: '^BNK\.[A-Z]+(\.CAP\.[A-Z0-9]+(\.[0-9]+(\.[A-Z0-9]+)?)?)?$'
+
+  # ── WHAT THIS CONTRACT DOES NOT KNOW (ADR-PA-0016) ───────────────────────────────────────────
+  # Two of the required fields have values only a DEPLOYMENT can supply, and this contract used to
+  # hard-code both — the rail enum here, and a `^BNK\.` regex for scope. The consequence was not a
+  # wart: `scope` is required, no value without the literal `BNK.` prefix matched, so an
+  # organisation outside the banking domain could not emit a conformant message AT ALL.
+  #
+  # They move to a deployment profile. The FIELDS stay required — a finding that names no rail
+  # routes nowhere, and one that names no owner is the noise floor WORK-OBSERVABILITY exists to
+  # prevent. What a deployment supplies is which values are legal.
+  profiled:
+    rail: >-
+      the routing dimensions this deployment defines. A finding travels the rail of the DECISION it
+      needs, to the tier that owns it (AGENT-OPERATING-MODEL §6) — so the set follows from how a
+      given factory divides its decisions, and the contract never counted them. A profile that
+      declares no rails constrains none.
+    scope: >-
+      a node of this deployment's taxonomy, named EXPLICITLY (WORK-OBSERVABILITY §3 scoping rule)
+      and well-formed at exactly one grain. A profile's `scope_grammar` IS its grain ladder, because
+      ids that encode a hierarchy do so as prefixes. A profile that declares no grammar leaves
+      `scope` required but unconstrained — the honest position before a taxonomy exists.
+  profile_default: profiles/papeete.yaml   # shipped as a REFERENCE, not a privilege; `--profile` takes another
 
 # THE BINDINGS — how envelope+payload ride a concrete medium. GitHub issues are the first (and
 # today only) binding. A future medium (a queue, a file drop, a direct channel) is a new entry

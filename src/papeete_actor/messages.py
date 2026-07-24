@@ -15,6 +15,7 @@ from pathlib import Path
 
 import yaml
 
+from . import profile
 from .report import Report
 from .schemas import load
 
@@ -22,10 +23,16 @@ FENCE_RE = re.compile(r"```([A-Za-z0-9_-]*)\n(.*?)\n```", re.DOTALL)
 MARKER_RE = re.compile(r"<!--\s*finding:\s*(.+?)\s*-->")
 
 
-def validate_payload(payload, schema: dict) -> list[str]:
-    """Human-readable errors for one payload; empty means conformant."""
+def validate_payload(payload, schema: dict, prof: dict | None = None) -> list[str]:
+    """Human-readable errors for one payload; empty means conformant.
+
+    `prof` supplies what the contract cannot know — this deployment's rails and the grammar of its
+    taxonomy (ADR-PA-0016). The REQUIRED FIELDS are the contract's and never move; only which values
+    are legal is the deployment's to say.
+    """
     errors: list[str] = []
     spec = schema["payload"]
+    prof = profile.load() if prof is None else prof
 
     if not isinstance(payload, dict):
         return [f"payload is not a mapping (got {type(payload).__name__})"]
@@ -35,21 +42,28 @@ def validate_payload(payload, schema: dict) -> list[str]:
         if value is None or (isinstance(value, str) and not value.strip()):
             errors.append(f"missing required field '{field}'")
 
-    for field, allowed in spec["enums"].items():
+    enums = dict(spec["enums"])
+    rails = profile.rails(prof)
+    if rails:
+        enums["rail"] = rails
+    for field, allowed in enums.items():
         value = payload.get(field)
         if value is not None and value not in allowed:
             errors.append(f"'{field}' is '{value}', not one of {allowed}")
 
-    # scope is an explicit, well-formed capability node at exactly one grain (the scoping rule).
+    # scope is an explicit, well-formed node of the deployment's taxonomy at exactly one grain (the
+    # scoping rule). A profile that declares no grammar leaves it required but unconstrained — and
+    # the prefix-grain check goes with it, since it reads the hierarchy out of the id shape.
+    grammar = profile.scope_grammar(prof)
     scope = payload.get("scope")
-    if scope is not None:
-        if not re.match(spec["scope_grammar"], str(scope)):
+    if grammar and scope is not None:
+        if not re.match(grammar, str(scope)):
             errors.append(
-                f"'scope' is '{scope}', not a well-formed capability node "
-                f"(context | zone | L1 | L2 per the grain ladder)"
+                f"'scope' is '{scope}', not a well-formed node of this deployment's taxonomy "
+                f"(profile '{prof.get('profile', '?')}' — context | zone | L1 | L2 per its grain ladder)"
             )
         subject = payload.get("subject")
-        if isinstance(subject, str) and re.match(spec["scope_grammar"], subject):
+        if isinstance(subject, str) and re.match(grammar, subject):
             if subject != scope and not subject.startswith(str(scope) + "."):
                 errors.append(
                     f"'scope' ({scope}) is not a prefix-grain of 'subject' ({subject}); "
@@ -89,19 +103,26 @@ def parse_binding(body: str, schema: dict):
     return payload, has_envelope, errors
 
 
-def lint_payload_file(path: Path, schema: dict | None = None) -> Report:
+def lint_payload_file(path: Path, schema: dict | None = None, prof: dict | None = None) -> Report:
     schema = schema or load("message")
     rep = Report()
-    rep.errors += validate_payload(yaml.safe_load(path.read_text()), schema)
+    rep.errors += validate_payload(yaml.safe_load(path.read_text()), schema, prof)
     if not rep.errors:
         rep.oks.append(f"{path} conforms to {schema['contract']}")
     return rep
 
 
-def lint_issue(body: str, labels: list[str], label: str = "issue body", schema: dict | None = None) -> Report:
+def lint_issue(body: str, labels: list[str], label: str = "issue body", schema: dict | None = None,
+               prof: dict | None = None) -> Report:
     schema = schema or load("message")
+    prof = profile.load() if prof is None else prof
     rep = Report()
-    rails = schema["payload"]["enums"]["rail"]
+    # THE RAIL LABEL IS THE SECOND DISCRIMINATOR — it catches an artifact that CLAIMS to be a
+    # message and dropped its envelope. It reads the deployment's rails, not the contract's, and a
+    # profile that declares none disables only this half: the envelope still discriminates, and an
+    # enveloped message is still validated. Stated because a silently weaker gate is worse than a
+    # declared one.
+    rails = profile.rails(prof) or []
 
     payload, has_envelope, errors = parse_binding(body, schema)
     claims_message = has_envelope or any(x in rails for x in labels)
@@ -116,7 +137,7 @@ def lint_issue(body: str, labels: list[str], label: str = "issue body", schema: 
             f"marker) — it IS a message, rendered wrong",
         )
     if payload is not None:
-        errors += validate_payload(payload, schema)
+        errors += validate_payload(payload, schema, prof)
 
     rep.errors += errors
     if not rep.errors:

@@ -27,6 +27,28 @@ That is deliberate — the contract is the two of them named and separated, not 
 framework. New kinds (a request, an ack, a decision) and new bindings (a non-GitHub medium) slot in
 without disturbing the layers already there.
 
+### And a fourth thing, which is not a layer: the deployment profile
+
+Two of the payload's required fields have values **no contract can know** — which `rail`s exist, and
+what a `scope` id looks like. Both follow from a particular business: the rails from how a given
+factory divides its decisions, the grammar from the shape of its taxonomy. They were hard-coded here
+until [ADR-PA-0016](../adr/ADR-PA-0016-the-deployment-profile.md), and the cost was not cosmetic —
+`scope` is required and the grammar admitted nothing without a literal `BNK.` prefix, so **an
+organisation outside the banking domain could not emit a conformant message at all.**
+
+They now live in a **deployment profile**, and the split is the same one this doctrine draws
+everywhere else:
+
+> **The contract says a finding carries a rail and a scope. The deployment says which rails exist
+> and what an id looks like.**
+
+The fields stay required — a finding that routes nowhere, or names no owner, is the noise floor
+[WORK-OBSERVABILITY](./WORK-OBSERVABILITY.md) exists to prevent, whatever the ids look like. A
+profile may under-constrain on purpose: declare no `scope_grammar` and scope is required but free,
+which is where a deployment starts before it has a taxonomy. `papeete-actor --profile FILE`; the
+shipped `profiles/papeete.yaml` is this ecosystem's answer and the default, a reference rather than a
+privilege.
+
 ## 2. The discriminator rule — which artifacts are messages
 
 > **An artifact is an inter-agent message if and only if it carries the envelope.**

@@ -11,6 +11,7 @@ from pathlib import Path
 
 import yaml
 
+from . import profile
 from .report import Report
 from .schemas import load
 
@@ -92,8 +93,10 @@ def _unknown(d: dict, spec: dict, where: str, rep: Report) -> None:
         rep.notes.append(f"{where}: '{k}' is not named by the schema — fold it in, or widen the contract")
 
 
-def lint(path: Path, schema: dict | None = None, registry: dict | None = None) -> Report:
+def lint(path: Path, schema: dict | None = None, registry: dict | None = None,
+         prof: dict | None = None) -> Report:
     schema = schema or load("papeete-actor-card")
+    prof = profile.load() if prof is None else prof
     rep = Report()
 
     try:
@@ -125,7 +128,13 @@ def lint(path: Path, schema: dict | None = None, registry: dict | None = None) -
         where = f"{path}: offers[{i}] '{off.get('id', '?')}'"
         _require(off, schema["offers"]["required"], where, rep)
         _unknown(off, schema["offers"], where, rep)
-        for fld, allowed in schema["offers"]["enums"].items():
+        # `nature` is the contract's; `rail` is the deployment's (ADR-PA-0016). A profile that
+        # declares no rails leaves the field required and its values unconstrained.
+        enums = dict(schema["offers"]["enums"])
+        rails = profile.rails(prof)
+        if rails:
+            enums["rail"] = rails
+        for fld, allowed in enums.items():
             if fld in off and off[fld] not in allowed:
                 rep.errors.append(f"{where}: {fld}='{off[fld]}' not in {allowed}")
 
