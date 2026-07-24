@@ -1,4 +1,4 @@
-"""papeete-actor — the three Papeete ecosystem contracts, and the gates that enforce them.
+"""papeete-actor — the four Papeete ecosystem contracts, and the gates that enforce them.
 
 THIS REPO OWNS THEM. They were ECO.GOV's until 2026-07-23, when ADR-PA-0001 / ADR-ECO-0019 moved
 the contracts here and ADR-PA-0014 / ADR-ECO-0021 moved the doctrine that explains them. ECO.GOV
@@ -7,6 +7,7 @@ now consumes this package like any other actor, at a pin.
     papeete-actor-card/v1    a repo's self-description        -> papeete-actor lint-card
     inter-agent-message/v0   an addressed request             -> papeete-actor lint-message
     publication/v2           a fact and its payload schema    -> papeete-actor lint-publication
+    ecosystem-registry/v0    the index that finds the cards   -> papeete-actor lint-registry
     the cross-card join      the conformance classes          -> papeete-actor check
 
 Every gate LOADS its schema; none hard-codes a field, an enum or a rule. Change a contract in
@@ -29,4 +30,5 @@ CONTRACTS = {
     "papeete-actor-card": "papeete-actor-card/v1",
     "message": "inter-agent-message/v0",
     "publication": "publication/v2",
+    "registry": "ecosystem-registry/v0",
 }

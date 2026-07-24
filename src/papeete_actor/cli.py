@@ -1,14 +1,15 @@
-"""papeete-actor — the CLI. One tool, one pin, three contracts.
+"""papeete-actor — the CLI. One tool, one pin, four contracts.
 
     papeete-actor lint-card        PAPEETE-ACTOR.YAML...  papeete-actor-card/v1
     papeete-actor lint-message     --issue-body FILE      inter-agent-message/v0
     papeete-actor lint-publication REPO...                publication/v2
+    papeete-actor lint-registry    REGISTRY.YAML...       ecosystem-registry/v0
     papeete-actor check            --workspace DIR        the cross-card join
     papeete-actor contracts                               which contracts + which deployment profile
 
 The contracts describe shapes; a DEPLOYMENT PROFILE supplies the values they cannot know — this
-deployment's rails, and the grammar of its taxonomy. `--profile FILE` on the gates that read them;
-the shipped reference profile is the default (ADR-PA-0016).
+deployment's rails, the grammar of its taxonomy, and where it keeps its registry. `--profile FILE`
+on the gates that read them; the shipped reference profile is the default (ADR-PA-0016).
 """
 import argparse
 import os
@@ -18,25 +19,27 @@ from pathlib import Path
 import yaml
 
 from . import CONTRACTS, __version__
-from . import cards, check, messages, profile, publications
+from . import cards, check, messages, profile, publications, registry
 from .report import Report
 from .schemas import contracts_dir, load
 
-
-REGISTRY_REL = Path("ecosystem-governance") / "ecosystem" / "registry.yaml"
 
 PROFILE_HELP = ("this deployment's profile — its rails and the grammar of its taxonomy. "
                 "Defaults to the shipped reference profile (ADR-PA-0016)")
 
 
-def _registry_candidates(root: Path):
-    """Where ecosystem-governance's registry may sit relative to `root`.
+def _registry_candidates(root: Path, prof: dict | None = None):
+    """Where this deployment's registry may sit relative to `root`.
 
-    The ecosystem spans two orgs, so `root` may be one org's directory (repos are siblings), the
-    parent holding both (repos are under <org>/), or a repo inside one. Same reason `check` tries
-    several card paths — a flat sibling layout is one shape among three."""
-    return [root / REGISTRY_REL, root / "papeete-foundry" / REGISTRY_REL,
-            root.parent / "papeete-foundry" / REGISTRY_REL]
+    THE PATHS COME FROM THE PROFILE, not from this file. They were three hard-coded literals
+    naming one organisation's directory layout, which meant a consumer holding every published
+    contract could author a conformant registry and still never be found (ADR-PA-0017). A profile
+    that declares none falls back to the reference layout, so nothing that resolved before stops.
+
+    Several candidates because a checkout may be flat (repos are siblings) or nested (repos under
+    <org>/) — same reason `check` tries several card paths."""
+    locations = profile.registry_locations(prof if prof is not None else profile.load())
+    return [root / rel for rel in locations]
 
 
 def _search_root(cards) -> Path:
@@ -60,7 +63,7 @@ def _search_root(cards) -> Path:
     return Path(os.path.commonpath([str(p) for p in parents]))
 
 
-def _registry(explicit: Path | None, near: Path):
+def _registry(explicit: Path | None, near: Path, prof: dict | None = None):
     """Find ecosystem/registry.yaml — given, or above the cards being checked.
 
     Walks UP from `near`, because the registry sits in a sibling repo and how far up that is
@@ -74,7 +77,7 @@ def _registry(explicit: Path | None, near: Path):
         return (yaml.safe_load(Path(explicit).read_text()), Path(explicit)) \
             if Path(explicit).exists() else (None, None)
     for base in [near, *near.parents]:
-        for cand in _registry_candidates(base):
+        for cand in _registry_candidates(base, prof):
             if cand.exists():
                 return yaml.safe_load(cand.read_text()), cand
     return None, None
@@ -83,7 +86,7 @@ def _registry(explicit: Path | None, near: Path):
 def cmd_lint_card(args) -> int:
     schema = load("papeete-actor-card")
     prof = profile.load(args.profile)
-    reg, reg_path = _registry(args.registry, _search_root(args.cards))
+    reg, reg_path = _registry(args.registry, _search_root(args.cards), prof)
     if reg is None:
         print("  note registry.yaml not found — dependency resolution not checked")
     else:
@@ -128,11 +131,19 @@ def cmd_lint_publication(args) -> int:
 def cmd_check(args) -> int:
     workspace = Path(args.workspace).resolve()
     if args.registry:
-        registry = Path(args.registry)
+        reg_path = Path(args.registry)
     else:
-        cands = _registry_candidates(workspace)
-        registry = next((c for c in cands if c.exists()), cands[0])
-    return check.run(workspace, registry).emit("papeete-actor check")
+        cands = _registry_candidates(workspace, profile.load(args.profile))
+        reg_path = next((c for c in cands if c.exists()), cands[0])
+    return check.run(workspace, reg_path).emit("papeete-actor check")
+
+
+def cmd_lint_registry(args) -> int:
+    schema = load("registry")
+    rep = Report()
+    for r in args.registries:
+        rep.merge(registry.lint(Path(r), schema))
+    return rep.emit("ecosystem-registry gate")
 
 
 def cmd_contracts(args) -> int:
@@ -155,6 +166,7 @@ def cmd_contracts(args) -> int:
     print(f"\nprofile '{prof.get('profile', '?')}' from {src}")
     print(f"  rails          {', '.join(rails) if rails else '(unconstrained)'}")
     print(f"  scope_grammar  {grammar or '(unconstrained)'}")
+    print(f"  registry       {', '.join(profile.registry_locations(prof))}")
     return 0
 
 
@@ -183,9 +195,14 @@ def main(argv=None) -> int:
     p.add_argument("repos", nargs="+", type=Path, help="repo roots (each holding events/ and papeete-actor.yaml)")
     p.set_defaults(fn=cmd_lint_publication)
 
+    p = sub.add_parser("lint-registry", help="validate the index that makes cards discoverable")
+    p.add_argument("registries", nargs="+", type=Path, help="path(s) to a registry.yaml")
+    p.set_defaults(fn=cmd_lint_registry)
+
     p = sub.add_parser("check", help="the cross-card join over the whole ecosystem")
     p.add_argument("--workspace", type=Path, default=Path("."), help="directory holding the sibling repos")
     p.add_argument("--registry", type=Path, help="path to ecosystem/registry.yaml")
+    p.add_argument("--profile", type=Path, help=PROFILE_HELP)
     p.set_defaults(fn=cmd_check)
 
     p = sub.add_parser("contracts", help="which contract versions this build enforces, and against which profile")

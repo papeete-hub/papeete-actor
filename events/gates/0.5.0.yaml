@@ -1,0 +1,30 @@
+publication: gates
+at: 2026-07-24
+ref: 0.5.0
+breaking: false
+summary: >-
+  papeete-actor 0.5.0 — a fourth contract, ecosystem-registry/v0, and the `lint-registry` gate
+  that enforces it. Registry discovery now follows the deployment profile. Additive: no existing
+  shape moved, and the shipped profile lists the paths that were hard-coded, so nothing that
+  resolved before stops.
+evidence: >-
+  ADR-PA-0017. What a consumer moving the pin gets:
+
+    ecosystem-registry/v0   NEW. The index that makes distributed cards discoverable, and the
+                            classification rule two other contracts already read. See
+                            `registry-contract/0.5.0`.
+    lint-registry           NEW gate. Its one class the cross-card join cannot report:
+                            `card_status: adopted` with no `card:` path is skipped by the join in
+                            SILENCE, so an adopted card is absent from every result with nothing
+                            said about it.
+    contracts               now prints four contracts and this deployment's registry locations.
+    profile                 gains `registry.locations`. Omitting it falls back to the reference
+                            layout — a profile written before the key existed is unaffected.
+    check                   gains `--profile`, so the join finds a registry wherever a deployment
+                            keeps it rather than only where this ecosystem does.
+    cards.registry_classes  UNCHANGED as an entry point; it now delegates to `registry.classes`,
+                            which reads the rule out of the contract instead of restating it.
+
+  `breaking: false` is a judgement, so the ground for it: no field was added to or removed from
+  any existing shape, no enum narrowed, and the only behavioural change — registry discovery —
+  is a strict superset of the previous hard-coded search for any profile that omits the new key.

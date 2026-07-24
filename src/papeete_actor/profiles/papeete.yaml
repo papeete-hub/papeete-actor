@@ -37,3 +37,21 @@ rails:
 # contract will not allow is dropping the field: a finding that names no owner is the noise floor
 # WORK-OBSERVABILITY exists to prevent.
 scope_grammar: '^BNK\.[A-Z]+(\.CAP\.[A-Z0-9]+(\.[0-9]+(\.[A-Z0-9]+)?)?)?$'
+
+# ── THE REGISTRY ──────────────────────────────────────────────────────────────────────────────
+# WHERE the index lives, relative to a workspace root. `ecosystem-registry/v0` says what a registry
+# IS; it cannot say where this organisation keeps it, any more than the message contract could say
+# what a scope id looks like. This ecosystem keeps it in the governance repo of its lab org, which
+# is a fact about how these repos are laid out and about nothing else.
+#
+# Several paths because the ecosystem spans two orgs, so a checkout may be flat (repos are
+# siblings) or nested (repos under <org>/). Discovery tries each, in order, walking up from the
+# cards being linted.
+#
+# OMIT THIS KEY and the reference layout below is assumed, so a profile written before the key
+# existed resolves exactly as it did. Another organisation lists its own paths and nothing here is
+# privileged except by having come first. See ADR-PA-0017.
+registry:
+  locations:
+    - ecosystem-governance/ecosystem/registry.yaml
+    - papeete-foundry/ecosystem-governance/ecosystem/registry.yaml

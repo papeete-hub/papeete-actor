@@ -20,6 +20,7 @@ _NAMES = {
     "papeete-actor-card": "papeete-actor-card.schema.yaml",
     "message": "message.schema.yaml",
     "publication": "publication.schema.yaml",
+    "registry": "registry.schema.yaml",
 }
 
 _DIR = Path(__file__).resolve().parent / "schemas"
@@ -30,7 +31,7 @@ def contracts_dir() -> Path:
 
 
 def load(kind: str) -> dict:
-    """Return one contract by kind: 'papeete-actor-card' | 'message' | 'publication'."""
+    """Return one contract by kind: 'papeete-actor-card' | 'message' | 'publication' | 'registry'."""
     path = _DIR / _NAMES[kind]
     if not path.exists():
         raise FileNotFoundError(

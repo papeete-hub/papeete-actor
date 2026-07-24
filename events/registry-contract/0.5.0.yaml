@@ -1,0 +1,31 @@
+publication: registry-contract
+at: 2026-07-24
+ref: 0.5.0
+breaking: false
+summary: >-
+  ecosystem-registry/v0 — first publication. The shape of the index that makes distributed cards
+  discoverable: `repos[]` with `repo`, `papeete_actor`, `card`, `card_status`, and the rule that
+  classifies each row actor / dangling / external. A new contract, so nothing that conformed
+  before stops conforming.
+evidence: >-
+  ADR-PA-0017. What it closes, and why it is not merely an addition:
+
+  TWO PUBLISHED CONTRACTS ALREADY DEPENDED ON THIS SHAPE. papeete-actor-card/v1 derives
+  externality from `card_status` and names ecosystem/registry.yaml "the sole authority for WHERE a
+  card lives". The shape those rules read existed as a dict comprehension in
+  `cards.registry_classes` and nowhere else — so a consumer could install the package, satisfy all
+  three contracts, and still be unable to author the one file the gates read. That is the failure
+  ADR-PA-0001 refused to ship, one level down.
+
+  WHAT IS CONTRACTED IS THE INDEX, AND NOTHING MORE. Four fields. Every other key in a registry
+  belongs to the deployment's own model of its ecosystem — `orgs`, `edges`, `contexts_ref`,
+  `role`, `governed_by` — and is reported as a note, never an error. A conformant registry is a
+  subset claim, never a whole-file one. The shape is mine; the map is not.
+
+  `card_status` IS OPTIONAL ON PURPOSE. Its ABSENCE is how a registry says "this repo is not an
+  actor", which is what keeps an engine or a corpus from being reported as a dangling subscription
+  in every repo that consumes it (ADR-ECO-0014 §2). Requiring the key would erase the distinction.
+
+  WHERE THE REGISTRY LIVES IS NOW A DEPLOYMENT'S FACT, declared as `registry.locations` in the
+  profile rather than hard-coded to one organisation's directory layout. A profile omitting the
+  key falls back to the reference paths, so the reference deployment resolves exactly as before.

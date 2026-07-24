@@ -144,3 +144,46 @@ def test_lint_message_reads_a_payload_file(tmp_path, capsys):
         "type": "engineering-debt", "rail": "engineering-debt", "severity": "low",
         "scope": "BNK.RLVR", "subject": "BNK.RLVR", "description": "d"}))
     assert cli.main(["lint-message", "--payload", str(payload)]) == 0
+
+
+# ── lint-registry, and the profile-declared location ──────────────────────────────────────────
+
+def test_lint_registry_gates_the_index(tmp_path, capsys):
+    reg = tmp_path / "registry.yaml"
+    reg.write_text(yaml.safe_dump({"repos": [
+        {"repo": "example/up", "papeete_actor": "UP.STREAM", "card_status": "adopted"}]}))
+    assert cli.main(["lint-registry", str(reg)]) == 1
+    assert "unfindable_card" in capsys.readouterr().err
+
+
+def test_lint_registry_passes_a_conformant_index(tmp_path, capsys):
+    reg = tmp_path / "registry.yaml"
+    reg.write_text(yaml.safe_dump({"repos": [
+        {"repo": "example/up", "card": "papeete-actor.yaml", "card_status": "adopted"}]}))
+    assert cli.main(["lint-registry", str(reg)]) == 0
+
+
+def test_contracts_reports_the_registry_contract_and_its_location(capsys):
+    cli.main(["contracts"])
+    out = capsys.readouterr().out
+    assert "ecosystem-registry/v0" in out
+    assert "ecosystem-governance/ecosystem/registry.yaml" in out
+
+
+def test_discovery_follows_the_profile_not_a_hard_coded_path(tmp_path, capsys):
+    """A deployment that keeps its registry somewhere else is found there, and only there."""
+    repo = tmp_path / "ws" / "the-repo"
+    card = write(repo, "own", dict(_minimal(), repo="the-repo"))
+    reg = tmp_path / "ws" / "governance" / "index.yaml"
+    reg.parent.mkdir(parents=True)
+    reg.write_text(yaml.safe_dump({"repos": [
+        {"repo": "the-repo", "card": "papeete-actor.yaml", "card_status": "adopted"}]}))
+    prof = tmp_path / "acme.yaml"
+    prof.write_text("profile: acme\ncontract: deployment-profile/v0\n"
+                    "registry:\n  locations: [governance/index.yaml]\n")
+
+    cli.main(["lint-card", str(card), "--profile", str(prof)])
+    assert f"resolved against {reg}" in capsys.readouterr().out
+
+    cli.main(["lint-card", str(card)])            # shipped profile: looks elsewhere, finds nothing
+    assert "registry.yaml not found" in capsys.readouterr().out

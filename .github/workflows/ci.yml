@@ -34,6 +34,14 @@ jobs:
         # proof that the schemas shipped and the gate can read them.
         run: /tmp/probe/bin/papeete-actor lint-card papeete-actor.yaml
 
+      - name: the registry contract must be enforceable from the wheel alone
+        # A consumer authoring its own registry has only what shipped. This asserts the fourth
+        # contract arrived and its gate can read it, with no registry from this ecosystem in
+        # sight — the ADR-PA-0017 claim, checked rather than asserted.
+        run: |
+          printf 'repos:\n  - repo: acme/thing\n    card: papeete-actor.yaml\n    card_status: adopted\n' > /tmp/reg.yaml
+          /tmp/probe/bin/papeete-actor lint-registry /tmp/reg.yaml
+
       - name: this repo's own publication log
         # A repo that publishes the outbox contract and does not gate its own log would be
         # exempting the author from the rule. It also enforces the pinning rule against itself:
