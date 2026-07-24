@@ -61,3 +61,22 @@ def rails(profile: dict) -> list | None:
 def scope_grammar(profile: dict) -> str | None:
     """The id grammar of this deployment's taxonomy, or None when it has not fixed one."""
     return profile.get("scope_grammar") or None
+
+
+# WHERE THE REGISTRY LIVES IS A DEPLOYMENT'S FACT TOO, and it was hard-coded for the same reason
+# the rails were: the first deployment's layout was the only one anybody had. A consumer holding
+# the published contracts could author a conformant registry and still not be found by the gates,
+# because discovery looked in one organisation's directory and nowhere else (ADR-PA-0017).
+DEFAULT_REGISTRY_LOCATIONS = ["ecosystem-governance/ecosystem/registry.yaml"]
+
+
+def registry_locations(profile: dict) -> list[str]:
+    """Where this deployment keeps its registry, relative to a workspace root.
+
+    Falls back to the reference deployment's layout rather than to nothing, so a profile written
+    before this key existed keeps resolving exactly as it did. That is a REFERENCE and not a
+    privilege — the same standing `profiles/papeete.yaml` has among profiles.
+    """
+    declared = profile.get("registry") or {}
+    locations = declared.get("locations") if isinstance(declared, dict) else None
+    return [str(p) for p in locations] if locations else list(DEFAULT_REGISTRY_LOCATIONS)

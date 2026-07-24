@@ -20,6 +20,7 @@ import inspect
 import pytest
 
 from papeete_actor import CONTRACTS, cards, check, messages, profile, publications
+from papeete_actor import registry as registry_mod
 from papeete_actor.report import Report
 from papeete_actor.schemas import contracts_dir, load
 
@@ -84,6 +85,7 @@ def test_errors_go_to_stderr_and_the_rest_to_stdout(capsys):
     (cards, "lint"), (cards, "registry_classes"), (cards, "resolve_source"),
     (messages, "validate_payload"), (messages, "lint_issue"), (messages, "lint_payload_file"),
     (publications, "lint_log"), (check, "run"),
+    (registry_mod, "lint"), (registry_mod, "classes"),
     (profile, "load"), (profile, "rails"), (profile, "scope_grammar"),
 ])
 def test_the_entry_point_exists(module, fn):
@@ -99,7 +101,7 @@ def test_the_card_contract_name_is_importable():
 # The same assertion CI makes against a built wheel, made against the source tree too. A gate with
 # nothing to enforce is the failure mode worth a test.
 
-@pytest.mark.parametrize("kind", ["papeete-actor-card", "message", "publication"])
+@pytest.mark.parametrize("kind", ["papeete-actor-card", "message", "publication", "registry"])
 def test_every_contract_loads(kind):
     assert isinstance(load(kind), dict)
 
@@ -109,6 +111,13 @@ def test_each_schema_declares_the_version_the_build_expects(kind, expected):
     """`papeete-actor contracts` compares these two. A schema edited without moving CONTRACTS —
     or the reverse — is a build that reports a version it does not enforce."""
     assert load(kind)["contract"] == expected
+
+
+def test_every_declared_contract_has_a_schema_file():
+    """CONTRACTS and _NAMES are two lists that must not drift — a build reporting a contract it
+    cannot load is a gate with nothing to enforce."""
+    for kind in CONTRACTS:
+        assert load(kind)
 
 
 def test_the_contracts_ship_beside_the_code():

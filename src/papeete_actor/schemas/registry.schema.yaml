@@ -1,0 +1,108 @@
+# registry.schema.yaml — the ecosystem registry contract.
+#
+# THE INDEX THAT MAKES DISTRIBUTED CARDS DISCOVERABLE. A papeete-actor carries its card at its own
+# repo root, because the repo IS the actor's durable state (ADR-ECO-0012). That buys sovereignty
+# and costs discoverability: nothing in a card says where any OTHER card lives, and the cross-card
+# join needs every card at once. This file is the shape of the answer — the role A2A's well-known
+# path plays, for an ecosystem whose actors are repos.
+#
+# ─── WHY IT IS HERE, AND WHAT THAT DOES NOT MEAN ──────────────────────────────────────────────
+# Three contracts moved here by ADR-PA-0001 so an organisation could hold them without access to
+# the lab. The registry shape did not, and the omission was silent rather than decided: two of the
+# contracts DEPEND on it. `papeete-actor-card/v1` makes externality derive from `card_status`, and
+# names ecosystem/registry.yaml "the sole authority for WHERE a card lives". So a consumer could
+# hold every published contract, satisfy all three, and still be unable to author the one file the
+# join reads — the exact failure ADR-PA-0001 refused to ship, one level down.
+#
+# THE SHAPE IS MINE; THE MAP IS NOT. This contract describes the INDEX and stops there. It says a
+# registry lists repos and which of them carry cards; it says nothing about which repos exist, how
+# they are organised, who governs what, or how an ecosystem converges. Those are the ecosystem's
+# own model — ECO.GOV's `orgs:`, `edges:`, `contexts_ref:`, `role:`, `governed_by:` — and a rule
+# about them recorded here would be the altitude violation ADR-ECO-0007 names, which this repo's
+# `hard_boundary` already forbids. See ADR-PA-0017.
+#
+# A CONFORMANT REGISTRY IS THEREFORE A SUBSET CLAIM, NEVER A WHOLE-FILE ONE. Every key this
+# contract does not name is the deployment's own and is reported as a note, never an error. The
+# reference deployment's registry carries eleven such fields and conforms exactly as it stands.
+
+contract: ecosystem-registry/v0
+
+kind: ecosystem-registry
+
+# WHERE IT LIVES IS A DEPLOYMENT'S FACT, NOT A CONTRACT'S. `ecosystem-governance/ecosystem/
+# registry.yaml` is one organisation's layout; another puts it anywhere it likes. The path is in
+# the deployment profile, for the same reason the rails and the taxonomy grammar are (ADR-PA-0016).
+location:
+  declared_in: deployment-profile `registry.locations`
+  default: ecosystem-governance/ecosystem/registry.yaml   # a REFERENCE, not a privilege
+
+# ── THE INDEX ─────────────────────────────────────────────────────────────────────────────────
+index:
+  key: repos                    # the list the gates walk
+  entry:
+    required: [repo]
+    optional: [papeete_actor, card, card_status]
+    enums:
+      card_status: [adopted, pending, none]
+    notes:
+      repo: >-
+        the repo path, `<org>/<name>`. THE ROW'S IDENTITY, and the only universally required
+        field — a registry may index a repo it knows nothing else about.
+      papeete_actor: >-
+        the ecosystem-layer id (BNK.RLVR, ECO.GOV), or `none` when the repo has no context id.
+        `none` IS NOT ABSENCE and never classifies: reliever-implementation carries it and its
+        card is adopted. An id is an extra lookup alias, never the thing that decides actorhood.
+      card: >-
+        the path to the card WITHIN that repo, as it stands TODAY — not as it should be. The join
+        reads this field to FIND the card, so a path written ahead of the move does not merely
+        misinform, it breaks the join. A row that runs ahead fails silently.
+      card_status: >-
+        whether the card exists yet. Its ABSENCE is a positive statement, not a gap — see
+        `classification`.
+
+# ── CLASSIFICATION — the rule the join applies, stated once ────────────────────────────────────
+# KEYED ON card_status, NEVER ON `papeete_actor:`. The first implementation keyed on the id and
+# misclassified two of seven dependencies immediately: reliever-implementation carries
+# `papeete_actor: none` because it has no context id, and its card is ADOPTED; settler carried it
+# too and was ruled an actor that owes a card (ADR-PA-0009 §1). Calling either "external" silences
+# exactly the defect the join exists to surface.
+classification:
+  actor: 'card_status: adopted | pending — an actor, whatever its `papeete_actor:` says'
+  dangling: 'card_status: none — an actor that OWES a card. Not external.'
+  external: >-
+    no `card_status` key at all — an engine, a corpus, an artifact. Never an actor, so never
+    dangling. THE ABSENCE IS THE DECLARATION, which is why `card_status` cannot be required: a
+    contract that forced the key would erase the only way to say "this is not an actor".
+  reported_as: external | dangling
+
+# ── ALIASING ──────────────────────────────────────────────────────────────────────────────────
+# One row is reachable under three keys, because consumers write whichever they hold. All three
+# resolve to the same classification; none of them is canonical.
+aliasing:
+  keys: [repo, papeete_actor, bare repo name]
+  bare_name: the segment after the last `/` — `papeete-hub/kpack` also answers to `kpack`
+  never_indexed: >-
+    the literal `none`. Several rows carry `papeete_actor: none`, and indexing it would collide
+    every one of them under a single key that classifies them all as whatever was read last.
+
+# ── CONFORMANCE ───────────────────────────────────────────────────────────────────────────────
+# What `papeete-actor lint-registry` computes. All of it is decidable from the registry alone; the
+# classes that need the cards too are `papeete-actor check`'s.
+conformance:
+  unfindable_card: >-
+    `card_status: adopted | pending` with no `card:` path. THE WORST CLASS THIS FILE CARRIES, and
+    the reason the gate exists: the join skips such a row in silence, so an adopted card is absent
+    from the ecosystem-wide result with nothing reported. The registry asserts the card exists and
+    withholds the one field needed to read it.
+  unstated_card_status: >-
+    a `card:` path with no `card_status`. The row is classified EXTERNAL — "not an actor" — while
+    carrying the path to its card. Almost always a half-written row rather than a claim.
+  duplicate_repo: >-
+    two rows for one repo path. The later silently wins, so the registry holds a classification
+    nobody chose.
+  placeholder_row: >-
+    a `repo` carrying `<` — a template row like `<client>/<name>`. Legal and useful; reported as a
+    note so a reader knows the count includes rows that index nothing.
+  unknown_key: >-
+    NOT A DEFECT. Every key this contract does not name belongs to the deployment's own model of
+    its ecosystem, which this contract does not describe and must not constrain.

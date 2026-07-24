@@ -36,6 +36,7 @@ recorded here.**
 | [ADR-PA-0014](./ADR-PA-0014-the-agent-doctrine-moves-here.md) | The agent doctrine moves here — a repo that ships the contract must also hold the reasoning | Proposed |
 | [ADR-PA-0015](./ADR-PA-0015-one-vocabulary-the-actor-fallback-is-removed.md) | One vocabulary — the `actor:` fallback is removed, and replaced by a refusal | Proposed |
 | [ADR-PA-0016](./ADR-PA-0016-the-deployment-profile.md) | The deployment profile — a contract describes shapes; it may not name one domain's values | Proposed |
+| [ADR-PA-0017](./ADR-PA-0017-the-registry-shape-is-a-contract.md) | The registry shape is a contract; the registry is not | Accepted |
 
 **Numbering is allocation order, not chronology.** `ADR-PA-0001` is this repo's founding decision and
 is dated after most of the records below it, which were made in `ecosystem-governance` between

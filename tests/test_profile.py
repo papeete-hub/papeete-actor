@@ -85,3 +85,27 @@ def test_the_papeete_scope_grammar_is_its_grain_ladder(scope, ok):
     import re
     grammar = profile.scope_grammar(profile.load())
     assert bool(re.match(grammar, scope)) is ok
+
+
+# ── where the registry lives ──────────────────────────────────────────────────────────────────
+# The last hard-coded deployment value. A consumer could hold every published contract, author a
+# conformant registry, and still never be found — discovery looked in one organisation's directory
+# and nowhere else (ADR-PA-0017).
+
+def test_the_papeete_profile_declares_where_its_registry_lives():
+    locations = profile.registry_locations(profile.load())
+    assert "ecosystem-governance/ecosystem/registry.yaml" in locations
+
+
+def test_another_deployment_supplies_its_own_registry_path(tmp_path):
+    path = tmp_path / "acme.yaml"
+    path.write_text("profile: acme\ncontract: deployment-profile/v0\n"
+                    "registry:\n  locations: [governance/index.yaml]\n")
+    assert profile.registry_locations(profile.load(path)) == ["governance/index.yaml"]
+
+
+def test_a_profile_omitting_the_key_falls_back_to_the_reference_layout(tmp_path):
+    """So a profile written before this key existed resolves exactly as it did."""
+    path = tmp_path / "old.yaml"
+    path.write_text("profile: old\ncontract: deployment-profile/v0\nrails: [a]\n")
+    assert profile.registry_locations(profile.load(path)) == profile.DEFAULT_REGISTRY_LOCATIONS

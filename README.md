@@ -6,6 +6,7 @@ Conformance gates for the [Papeete](https://github.com/papeete-foundry) ecosyste
 papeete-actor lint-card         papeete-actor.yaml…  papeete-actor-card/v1
 papeete-actor lint-message      --issue-body         inter-agent-message/v0
 papeete-actor lint-publication  REPO…                publication/v2
+papeete-actor lint-registry     registry.yaml…       ecosystem-registry/v0
 papeete-actor check             --workspace DIR      the cross-card join
 papeete-actor contracts                              which contract versions this build enforces
 ```

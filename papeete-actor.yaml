@@ -62,7 +62,7 @@ offers:
 releases:
   - id: papeete-actor
     means: >-
-      the conformance gates for all three contracts, plus the contracts themselves, as one
+      the conformance gates for all four contracts, plus the contracts themselves, as one
       pip-installable package. Resolve it if you hold a papeete-actor card, or are writing one, and
       want the shape checked rather than reviewed by eye. It needs no credential to anything: the
       schemas are in the wheel, so a build reaches nothing outside its own checkout (ADR-PA-0001).
@@ -130,9 +130,29 @@ publications:
     breaking_flag: >-
       REQUIRED — consumed by reference, and at least three actors have built gates encoding this
       contract's shape.
+  - id: registry-contract
+    means: >-
+      ecosystem-registry/v0 — the shape of the index that makes distributed cards discoverable:
+      which repos an ecosystem knows, which of them carry cards, and where each card sits. It
+      describes the INDEX and stops there; how a deployment models its own orgs, edges and
+      topology is that deployment's, and a rule about it here would breach this repo's
+      hard_boundary. Concerns whoever authors a registry, and whoever reads externality out of
+      one — which is every consumer of papeete-actor-card/v1, since that contract derives
+      externality from `card_status`.
+    shape: events/registry-contract/schema.yaml
+    status: >-
+      EMITTING. One record — `0.5.0`, `breaking: false`: a NEW contract, so nothing that
+      conformed stops conforming. It closes a hole two published contracts already depended on:
+      the card contract names registry.yaml "the sole authority for WHERE a card lives" and
+      derives externality from `card_status`, while the shape of that file existed only as a
+      dict comprehension in this package's source (ADR-PA-0017).
+    surface: src/papeete_actor/schemas/registry.schema.yaml
+    breaking_flag: >-
+      REQUIRED — an ecosystem has exactly one registry and every card in it is found through
+      that file, so a change to its shape reaches every actor at once.
   - id: gates
     means: >-
-      the conformance gates for all three contracts plus the cross-card join, as one installable
+      the conformance gates for all four contracts plus the cross-card join, as one installable
       package. A consumer pins a version instead of vendoring a schema and byte-diffing it, and
       needs no credential to anything: the contracts are in the wheel.
     shape: events/gates/schema.yaml
@@ -177,7 +197,7 @@ dependencies:
     ref: main                        # reference binding, read at HEAD — see the_pin_rule
 
 records:
-  - what: the three ecosystem contracts — the store of record, mine alone to write
+  - what: the four ecosystem contracts — the store of record, mine alone to write
     where: src/papeete_actor/schemas/
   - what: >-
       the reference deployment profile — one deployment's rails and taxonomy grammar, shipped as a
@@ -196,6 +216,7 @@ gates:
   - papeete-actor lint-card — one card against papeete-actor-card/v1, including this repo's own
   - papeete-actor check — the cross-card join over every card in the registry
   - papeete-actor lint-publication — this repo's own events/ log against publication/v2
+  - papeete-actor lint-registry — the index that makes every other card findable
   - >-
     the gate suite — the contracts' own rules, asserted against built cards rather than against
     this repo's card, which is written to pass and therefore proves almost nothing

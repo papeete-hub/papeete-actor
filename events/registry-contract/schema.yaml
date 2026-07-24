@@ -1,0 +1,26 @@
+# events/registry-contract/schema.yaml — the payload shape for this publication.
+#
+# PRODUCER-OWNED, constraining publication/v2's envelope rather than replacing it. See the sibling
+# schema under events/papeete-actor-card-contract/ for why these files exist at all.
+
+kind: registry-contract
+record: publication/v2
+
+required: [publication, at, ref, summary, breaking]
+
+notes:
+  ref: >-
+    the `papeete-actor` version a consumer pins to hold this shape — the package version, not the
+    contract version. `ecosystem-registry/v0` names the shape and moves rarely.
+  breaking: >-
+    REQUIRED on every record, true or false. An ecosystem has exactly ONE registry, and every card
+    in it is found through that file — so a change to its shape reaches every actor at once, and
+    reaches them through a file none of them owns. That is a wider blast radius than the card
+    contract's, where each pair at least controls its own card.
+  summary: >-
+    what moved in the index: the entry fields, the classification rule, or where the file is
+    expected to live. A consumer reads it to decide whether its own registry still conforms.
+  scope_note: >-
+    NOT A FIELD — a standing caveat on every record here. This contract describes the INDEX only.
+    A record announcing a change to `orgs`, `edges` or any deployment's own modelling would be
+    announcing something this publication does not cover, and something this repo does not own.
