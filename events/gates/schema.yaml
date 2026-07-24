@@ -1,0 +1,30 @@
+# events/gates/schema.yaml — the payload shape for this publication.
+#
+# `gates` IS THE RELEASE RECORD. papeete-actor-card/v1 names it in `releases[].announced_by`, and
+# cutting the release IS emitting this fact — one act, two products. The artefact is the state a
+# consumer resolves; this record is the statement that the state now exists, and it ships in the
+# SAME COMMIT (publication/v2 `atomicity`).
+#
+# Which is exactly what did not happen between 0.1.0 and 0.4.0, and why the first record below is
+# a backfill.
+
+kind: gates
+record: publication/v2
+
+required: [publication, at, ref, summary, breaking]
+
+notes:
+  ref: >-
+    the PyPI version. `pip install papeete-actor==<ref>` is what a consumer does with this record,
+    which is what makes it the pin the pinning rule is about.
+  at: >-
+    the date the version was published to PyPI. Where that is later than the commit that decided
+    the change, the CONTRACT publications carry the earlier date and this one carries the release
+    — they are different facts and they are allowed to disagree.
+  breaking: >-
+    REQUIRED on every record, true or false. Consumers pin `papeete-actor==`, which is a pin by
+    any reading of the pinning rule. It reports whether the TOOL's behaviour or the CONTRACTS it
+    enforces changed under a consumer — see the per-contract publications for what moved.
+  backfilled: >-
+    the date this RECORD was written, when later than `at`. A backfill is declared, never repaired
+    in place: the log says a fact was recorded late rather than pretending it was recorded on time.

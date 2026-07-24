@@ -15,8 +15,18 @@ classifiers = [
 ]
 dependencies = ["pyyaml>=6.0"]
 
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
 [project.scripts]
 papeete-actor = "papeete_actor.cli:main"
+
+# THE GATES ARE TESTED, WHICH THEY WERE NOT UNTIL 0.4.0. Three breaking changes to
+# papeete-actor-card/v1 shipped between 0.1.0 and 0.4.0 with nothing exercising the gate but this
+# repo's own card — which passes trivially and therefore caught none of them. The one downstream
+# consumer discovered `offers[].means` had become required by its own suite going red.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [build-system]
 requires = ["hatchling"]

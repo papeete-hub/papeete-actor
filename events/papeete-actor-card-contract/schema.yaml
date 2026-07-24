@@ -1,0 +1,36 @@
+# events/papeete-actor-card-contract/schema.yaml — the payload shape for this publication.
+#
+# PRODUCER-OWNED, and it CONSTRAINS the envelope rather than replacing it. publication/v2 defines
+# what a record is; this file says which of its optional fields are mandatory here, and what each
+# one means for THIS fact. A payload schema that re-declared the envelope would be a second copy of
+# a contract this repo also owns — the drift generator ADR-ECO-0005 exists to prevent.
+#
+# WHY IT EXISTS AT ALL. `shape` was `none` with a status reading "no record ever emitted" from the
+# day the card was written. That was legal — the obligation binds at FIRST RECORD, not at
+# declaration — and it stopped being legal the moment the first record below was written.
+
+kind: papeete-actor-card-contract
+record: publication/v2                # the envelope. This file adds to it; it never overrides it.
+
+required: [publication, at, ref, summary, breaking]
+
+notes:
+  ref: >-
+    the `papeete-actor` version a consumer pins to hold this contract shape. THE PACKAGE VERSION,
+    not the contract version — `papeete-actor-card/v1` names the shape and moves rarely; the wheel
+    that carries it moves whenever the shape does. `papeete-actor contracts` prints the pairing for
+    a given build (ADR-PA-0012 §6).
+  at: >-
+    the date the contract shape changed, which is the date the deciding commit landed — NOT the
+    date the version carrying it was released. The two differ whenever a shape waits for a cut.
+  breaking: >-
+    REQUIRED on every record, true or false. The card declares a breaking_flag for this
+    publication because every repo that is a papeete-actor declares this contract's version in its
+    own card, and reference IS a pin. The gate cannot judge whether a change breaks; the flag
+    forces the judgement to be made rather than skipped.
+  summary: >-
+    one line naming WHAT MOVED in the shape, not why. A consumer reads it to decide whether its
+    own card still conforms — so it names fields, not intentions.
+  evidence: >-
+    the ADR that decided the change and the commit that shipped it. A consumer that must migrate
+    needs the reasoning, not only the delta.

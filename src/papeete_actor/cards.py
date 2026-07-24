@@ -93,8 +93,17 @@ def _unknown(d: dict, spec: dict, where: str, rep: Report) -> None:
         rep.notes.append(f"{where}: '{k}' is not named by the schema — fold it in, or widen the contract")
 
 
-def lint(path: Path, schema: dict | None = None, registry: dict | None = None,
+def lint(path: Path | str, schema: dict | None = None, registry: dict | None = None,
          prof: dict | None = None) -> Report:
+    """One card against papeete-actor-card/v1.
+
+    `path` IS COERCED, and every parameter after it stays optional. This is the one function in
+    the package another package imports — papeete-actor-simple calls `lint(path)` positionally
+    and merges the Report into its own, because the card contract is consumed there and never
+    re-authored (ADR-PAS-0004). `profile.load` already took `Path | str`; this taking only `Path`
+    was an asymmetry between two loaders a consumer reaches the same way.
+    """
+    path = Path(path)
     schema = schema or load("papeete-actor-card")
     prof = profile.load() if prof is None else prof
     rep = Report()

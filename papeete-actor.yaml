@@ -71,9 +71,14 @@ releases:
     announced_by: gates
     shape: none
     status: >-
-      0.1.0 released 2026-07-23 via Trusted Publishing. The TOOL version and the CONTRACT versions
-      move independently — `papeete-actor contracts` prints which a given build enforces
-      (ADR-PA-0012 §6), so a major bump here is about the gates, never about the shapes.
+      0.1.0 released 2026-07-23 via Trusted Publishing; 0.4.0 prepared and not yet tagged. The TOOL
+      version and the CONTRACT versions move independently — `papeete-actor contracts` prints which
+      a given build enforces (ADR-PA-0012 §6), so a major bump here is about the gates, never about
+      the shapes.
+      THE VERSION IN pyproject.toml IS NOT A RELEASE. It moved 0.1.0 -> 0.4.0 across three
+      untagged commits, and only a tag reaches PyPI — so `papeete-actor>=0.1.0` in a consumer
+      resolves to 0.1.0 to this day, and every contract change since is invisible to everyone who
+      installed rather than cloned. Bumping the number is not the act; cutting the tag is.
 
 # ── publications: facts I emit ──────────────────────────────────────────
 # These three moved here from ECO.GOV with the schemas themselves (ADR-PA-0001 / ADR-ECO-0019).
@@ -89,11 +94,13 @@ publications:
       releases/dependencies, occurrence in publications/subscriptions. Every repo that is a
       papeete-actor declares this contract's version in its own card, so a revision here moves a
       shape the whole ecosystem is pinned to.
-    shape: none
+    shape: events/papeete-actor-card-contract/schema.yaml
     status: >-
-      no record ever emitted. Owed, and sharper than it was: v1 is a breaking change to a shape
-      seven repos declare, and the rename in ADR-PA-0013 moved both the contract name and the card
-      filename. Nothing announces either. Inherited unpaid from ECO.GOV rather than fixed by moving.
+      EMITTING. One record — `0.4.0`, `breaking: true`: required `releases`, required
+      `offers[].means`, and the `rail` enum moved to the deployment profile. The debt this line
+      used to describe is paid; what paid it was a CONSUMER, not a resolution. papeete-actor-simple
+      discovered `offers[].means` had become required by its own test suite going red — which is
+      precisely the failure the breaking_flag exists to prevent, and did not.
     surface: src/papeete_actor/schemas/papeete-actor-card.schema.yaml
     breaking_flag: >-
       REQUIRED — every card in the ecosystem declares this contract's version, which is a pin by
@@ -102,8 +109,12 @@ publications:
     means: >-
       inter-agent-message/v0 — the envelope that makes an artifact a message, the finding payload it
       wraps, and the bindings it rides. An artifact is a message iff it carries the envelope.
-    shape: none
-    status: no record ever emitted; v0 predates the outbox contract.
+    shape: events/message-contract/schema.yaml
+    status: >-
+      EMITTING. One record — `0.4.0`, `breaking: false`: the `rail` enum and the `scope` grammar
+      moved to a deployment profile. A WIDENING, so v0 did not become v1 — no message that
+      validated before stops validating, and one that could not be written at all outside this
+      domain now can.
     surface: src/papeete_actor/schemas/message.schema.yaml
   - id: publication-contract
     means: >-
@@ -111,8 +122,10 @@ publications:
       rule, the per-publication payload schema and the human-view projection.
     shape: none
     status: >-
-      no record ever emitted HERE. v1 and v2 were announced from ECO.GOV's log, which is where the
-      records for them live; this publication inherits the id, not the history.
+      no record emitted HERE, and NONE OWED — publication/v2 is byte-identical to what shipped in
+      0.1.0. v1 and v2 were announced from ECO.GOV's log, which is where the records for them live;
+      this publication inherits the id, not the history. `shape: none` stays legal while the log is
+      empty; the obligation binds at first record, and the first record has not happened.
     surface: src/papeete_actor/schemas/publication.schema.yaml
     breaking_flag: >-
       REQUIRED — consumed by reference, and at least three actors have built gates encoding this
@@ -122,12 +135,16 @@ publications:
       the conformance gates for all three contracts plus the cross-card join, as one installable
       package. A consumer pins a version instead of vendoring a schema and byte-diffing it, and
       needs no credential to anything: the contracts are in the wheel.
-    shape: none
+    shape: events/gates/schema.yaml
     status: >-
-      RELEASED — papeete-actor 0.1.0 on PyPI, 2026-07-23, via Trusted Publishing with no stored
-      credential. `pip install papeete-actor` in a clean venv with no access to any Papeete repo
-      yields the contracts and the gates, which is the autonomy claim of ADR-PA-0001 demonstrated
-      rather than asserted. ECO.GOV, the one consumer that exists, pins `papeete-actor==0.1.0`.
+      EMITTING, two records. `0.1.0` — on PyPI 2026-07-23 via Trusted Publishing with no stored
+      credential, BACKFILLED because nothing announced it at the time. `0.4.0`, `breaking: true` —
+      the card contract moves, the deployment profile arrives, `check` refuses the retired `actor:`
+      key. 0.2.0 and 0.3.0 exist in pyproject.toml history and were never tagged, so no consumer
+      could ever resolve them and none is owed a record.
+      TWO CONSUMERS NOW, and they are not the same kind. ECO.GOV pins the CLI. papeete-actor-simple
+      pins the LIBRARY — it imports `papeete_actor.cards.lint` and merges the Report into its own,
+      because the card contract is consumed there and never re-authored (ADR-PAS-0004).
     surface: pyproject.toml; src/papeete_actor/ (PyPI name `papeete-actor`)
     breaking_flag: >-
       REQUIRED once released — consumers pin `papeete-actor==`, which is a pin by any reading of
@@ -162,6 +179,12 @@ dependencies:
 records:
   - what: the three ecosystem contracts — the store of record, mine alone to write
     where: src/papeete_actor/schemas/
+  - what: >-
+      the reference deployment profile — one deployment's rails and taxonomy grammar, shipped as a
+      reference and never as a privilege (ADR-PA-0016)
+    where: src/papeete_actor/profiles/
+  - what: the publication log — the facts I have emitted, append-only
+    where: events/
   - what: the gates and the cross-card join
     where: src/papeete_actor/
   - what: this repo's decision log
@@ -172,6 +195,10 @@ records:
 gates:
   - papeete-actor lint-card — one card against papeete-actor-card/v1, including this repo's own
   - papeete-actor check — the cross-card join over every card in the registry
+  - papeete-actor lint-publication — this repo's own events/ log against publication/v2
+  - >-
+    the gate suite — the contracts' own rules, asserted against built cards rather than against
+    this repo's card, which is written to pass and therefore proves almost nothing
   - ci.yml — the wheel must carry its contracts, and must lint this card with them
 
 hard_boundary: >-
@@ -183,10 +210,23 @@ autonomy: level-0                    # every write through a human-reviewed PR
 
 open:
   - >-
-    All four publications carry `shape: none`, and one of them is the papeete-actor-card contract
-    itself — whose v1 is a breaking change to a shape seven repos declare, announced nowhere. This
-    debt was inherited from ECO.GOV along with the schemas; moving the file did not pay it, and
-    this repo is now the one that owes it.
+    AN ACTOR THAT SHIPS AN ARTEFACT MUST EMIT PUBLICATIONS, and nobody chose that. `releases[]` is
+    required to carry `announced_by`, which must name a publication on the same card — so
+    `publications: []` and a non-empty `releases` cannot both hold. Any deployment that restricts
+    itself to addressed messages therefore cannot ship a release at all. papeete-actor-simple is
+    the worked proof: its restriction forbids publications, and its own card had to leave the
+    restriction to declare its own package. This is MY shape and MY defect; it is reported on the
+    consumer's card as the strongest `contract-deviation` candidate it holds, and the door for it
+    is the offer above. Undecided: widen `announced_by` to accept a release-only actor, or rule
+    that shipping an artefact IS emitting a fact and the restriction is what must give.
+  - >-
+    THE LIBRARY SURFACE IS CONTRACTED BY USE AND DECLARED NOWHERE. `releases[].means` describes a
+    pip-installable package of gates; it does not say that `papeete_actor.cards.lint` and
+    `papeete_actor.report.Report` are entry points another package builds on. papeete-actor-simple
+    does exactly that, and defends itself by calling positionally with one argument because it
+    cannot know which keyword arguments a given build offers. It is right to: the signature gained
+    `prof` at 0.4.0. The suite now pins that surface, but a card that advertises a CLI while a
+    consumer pins a Python API is a membrane describing the wrong thing.
   - >-
     This repo publishes an actorhood contract and is not conformant with work-observability/v0 —
     no work.yaml, no detection ledger, no kanban. The same nonconformity ECO.GOV records about

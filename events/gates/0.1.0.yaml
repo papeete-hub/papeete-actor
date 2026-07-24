@@ -1,0 +1,19 @@
+publication: gates
+at: 2026-07-23
+ref: 0.1.0
+backfilled: 2026-07-24
+breaking: false
+summary: >-
+  papeete-actor 0.1.0 on PyPI — the three ecosystem contracts and their gates as one
+  pip-installable package, published via Trusted Publishing with no stored credential.
+evidence: >-
+  ADR-PA-0001, tag v0.1.0. The autonomy claim demonstrated rather than asserted: `pip install
+  papeete-actor` in a clean venv with no access to any Papeete repo yields the contracts AND the
+  gates, because the schemas are ordinary committed source that ships in the wheel.
+
+  `breaking: false` because there was nothing to break — this is the first release.
+
+  BACKFILLED, and the reason is the debt this log was opened to pay. The release happened on
+  2026-07-23 and nothing announced it; the card carried `status: no record ever emitted` against
+  a publication whose whole purpose is to announce exactly this. The record is written late and
+  says so, which is the one honest way to close it.
