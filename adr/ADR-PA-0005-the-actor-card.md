@@ -62,8 +62,9 @@ Note for storming sessions: the event-storming "actor" sticky — a human person
 **persona**, so that *actor* keeps the actor-model sense above. That rename is what made the word
 available, and it must not be undone.
 
-**2. The card, with three parallel sections** (four since
-[ADR-PA-0010](./ADR-PA-0010-offers-subscription-disposition-and-dependencies.md)):
+**2. The card, with three parallel sections** (five since
+[ADR-PA-0010](./ADR-PA-0010-offers-subscription-disposition-and-dependencies.md), which added
+`dependencies` and then `releases`):
 
 - **`offers`** — what this actor accepts, with `nature: query | action`. Accepting a request never
   obliges the actor to honour it; triage remains the owner's exclusive act.

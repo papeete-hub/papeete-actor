@@ -66,7 +66,32 @@ offers:
     completion: refusal | <publication id>   # NOT a return value
     becomes: ADR candidate → task in tasks/<scope>/
 
+# ── RELEASES — the versioned artefacts I ship. STATE, not occurrence ────
+# A consumer RESOLVES these at a pin and uses them. Latest wins: a new version
+# replaces the old one for anyone who moves their pin. The mirror of this
+# section, consumer-side, is `dependencies` — exactly as `subscriptions`
+# mirrors `publications`.
+#
+# CUTTING THE RELEASE IS EMITTING THE FACT — one act, two products. The
+# artefact is the state; `announced_by` names the publication that says the
+# state now exists, and it ships in the SAME COMMIT. The event refers to the
+# release; it is not the release.
+releases:
+  - id: reliever-corpus            # what a consumer names when it pins me
+    means: >-
+      what this artefact IS and what it is for, so a consumer can decide
+      whether to resolve it. Same self-selection burden as a publication's.
+    versioning: semver             # how a consumer reads my refs — semver, calver, a convention
+    surface: kpack envelope; ontology/maps/     # or a level-1 descriptor
+    announced_by: CorpusEnvelope   # a publication ON THIS CARD. An artefact that
+                                   # ships with no fact is invisible to every
+                                   # consumer that pins it.
+    shape: none                    # optional here, unlike on a publication
+
 # ── PUBLICATIONS — facts I emit; addressed to nobody; nobody may refuse ─
+# OCCURRENCE, not state: a point in time saying something happened. Append-only —
+# a later record SUPERSEDES, it never replaces. `at`, `supersedes` and
+# `backfilled` are statements about time, and mean nothing applied to an artefact.
 # Binding: event-log (publication/v2) — one file per fact under
 # events/{publication}/{ref}.yaml, committed in the SAME COMMIT as the change it
 # describes. I never deliver, never acknowledge, and never list my consumers.
@@ -135,7 +160,7 @@ open:                               # the next agenda for this box
 
 ---
 
-## Filling the four sections
+## Filling the five sections
 
 They are not interchangeable, and putting information in the wrong one is the coupling bug the
 direction rule exists to prevent (AGENT-OPERATING-MODEL §5):
@@ -144,9 +169,20 @@ direction rule exists to prevent (AGENT-OPERATING-MODEL §5):
 |---------|-----------|------|
 | `records` | inward | The store of record. Only this papeete-actor writes it. |
 | `offers` | inbound | What I may be asked to do. The **caller** reasons about whether it is the right door; I may refuse. |
-| `publications` | downstream | Published, never delivered. The record *is* the event; consumers pull. **A publisher never opens issues in a consumer's repo, and never names its consumers.** |
-| `subscriptions` | consumer-side | The mirror of someone else's `publications` — declared here, by you, never by them. Carries what you *do* about the fact. |
-| `dependencies` | consumer-side | Whose contract you resolve, and at what ref. Never whom you message. |
+| `releases` | downstream, **state** | The versioned artefacts I ship. A consumer resolves them at a pin; latest wins. |
+| `publications` | downstream, **occurrence** | Published, never delivered. The record *is* the event; consumers pull. **A publisher never opens issues in a consumer's repo, and never names its consumers.** |
+| `subscriptions` | consumer-side, **occurrence** | The mirror of someone else's `publications` — declared here, by you, never by them. Carries what you *do* about the fact. |
+| `dependencies` | consumer-side | The papeete-actors you are interested in, and at what ref. **Actor-grained on purpose** — declaring one covers everything it exposes; you never enumerate which artefacts you take. Never whom you message. |
+
+**The two kinds, and the four sections they generate.** Produced and consumed state sit in
+`releases` / `dependencies`; produced and consumed occurrence sit in `publications` /
+`subscriptions`. Putting one in the other's slot is the same class of error as getting the
+direction rule wrong:
+
+| | state — *versioned, actionable, resolved at a pin; latest wins* | occurrence — *a point in time; append-only; superseded, never replaced* |
+|---|---|---|
+| **produce** | `releases` | `publications` |
+| **consume** | `dependencies` | `subscriptions` |
 
 ## Meaning, intent, and where behaviour lives
 

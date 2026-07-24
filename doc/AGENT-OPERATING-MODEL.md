@@ -158,6 +158,39 @@ rather than passing as noise. Contract: [`https://github.com/papeete-hub/papeete
 doctrine: [`INTER-AGENT-MESSAGES.md`](./INTER-AGENT-MESSAGES.md) (ADR-PA-0004). Switching transport
 later is a new *binding*, not a new message — which is the whole reason to name it.
 
+### Two kinds downstream: state and occurrence
+
+What flows downstream is not one kind of thing. A papeete-actor ships **artefacts** — a spec, a
+corpus, a package, a runnable application — and it emits **facts**. They are produced by one act and
+consumed by two different verbs:
+
+| | **state** — versioned, actionable; a consumer *resolves* it at a pin; latest wins | **occurrence** — a point in time; append-only; *read* at a position; superseded, never replaced |
+|---|---|---|
+| **produce** | `releases` | `publications` |
+| **consume** | `dependencies` | `subscriptions` |
+
+The two consuming sections differ in **grain**, deliberately: a subscription names one publication
+(the join needs it), a dependency names only the papeete-actor — and that covers everything the
+actor exposes. So a producer can never learn which of its releases are pinned, which is the same
+privacy `no_consumer_list` gives it over its publications, reached from the other side.
+
+The proof they are not one kind with a flag is in `publication/v2`: `at`, `supersedes`, `backfilled`
+and git-commit ordering are all statements **about time**, and none means anything applied to an
+artefact. You do not backfill a package; you do not supersede a tag.
+
+**A release and an artefact are the same thing under two lights** — the artefact is the content, the
+release is the versioned, pinnable act of shipping it. And **cutting the release *is* emitting the
+fact**: one act, two products, one commit. The artefact is the state; the publication named in the
+release's `announced_by` is the statement that the state now exists. The event *refers to* the
+release; it is not the release.
+
+That identity does real work. Nobody has to decide separately which artefact edits are "worth
+publishing" — the decision to cut a release **is** that decision, already made and already dated by
+the same person at the same moment. And `breaking: true` and a major version become two names for
+one judgement, which is why ADR-PA-0008's failure was a single failure and not two: two breaking
+changes shipped from `reliever-business` under PATCH tags with nothing announcing either, and the
+downstream detector could only report `STALE_PROVENANCE / severity: medium`.
+
 ### The direction rule: addressed upstream, published downstream
 
 The anti-coupling rule for every edge:
@@ -323,9 +356,10 @@ One page per box that *is* its contract:
 | Role | which context, core/supporting |
 | Owned state | the repo — `records` |
 | `offers` | what it may be asked to do (`query` / `action`); the caller reasons, it may refuse |
+| `releases` | the versioned artefacts it ships — state, resolved at a pin, announced by a publication |
 | `publications` | facts it emits — `means` (the prose) **and** `shape` (the payload schema), always both |
 | `subscriptions` | facts it pulls — `notice` (deterministic) and `then` (what it does about them) |
-| `dependencies` | whose contract it resolves, and at what ref |
+| `dependencies` | which papeete-actors it is interested in, and at what ref — actor-grained, never per-artefact |
 | Membrane gates | what the bookends validate |
 | Work surface | its `work.yaml`: detection ledgers + kanban — how it reports and consumes findings ([WORK-OBSERVABILITY](./WORK-OBSERVABILITY.md)) |
 | Budget | token/time circuit breaker |

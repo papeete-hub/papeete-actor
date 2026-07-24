@@ -148,6 +148,23 @@ a consumer by a property of itself, which is strictly easier to satisfy honestly
   consumption.
 - `papeete-actor check` still does not exist. `lint_card.py` validates one card; every cross-card figure in
   `ECO.GOV`'s card remains hand-computed, and that remains `ECO.GOV`'s standing nonconformity.
+- **`releases` is ADDED, as a fifth section** — decided after this revision shipped. An artefact and
+  a release are the same thing under two lights, and **cutting the release is emitting the fact**:
+  one act, two products, one commit. But a release is not a *publication*, and forcing them into one
+  section would have re-fused what the two kinds separate — a release is **state** (versioned,
+  actionable, resolved at a pin, latest wins) and a publication is an **occurrence** (a point in
+  time, append-only, superseded never replaced). `at`, `supersedes` and `backfilled` are statements
+  about time and mean nothing applied to an artefact.
+
+  The tell is that v1 already carried the split on the *consuming* side and lacked it on the
+  producing side: `dependencies` (id + ref — a pin, i.e. state) versus `subscriptions` (notice +
+  then — a position, i.e. occurrence). `releases` restores the symmetry — produce/consume × state/
+  occurrence, four sections. Each release names the publication that announces it in
+  `announced_by`, which makes ADR-PA-0008's failure structurally impossible rather than merely
+  forbidden, and yields a sixth conformance class, `unannounced-release`, decidable from one card.
+
+  This also **contracts the second of ADR-PA-0013 §4's five facets** — *"the artefacts it
+  produces"* — ahead of the successor ADR that record anticipated. The other four stand open.
 - **`offers[].means` is REQUIRED** — decided after this revision shipped, on the evidence this record
   itself filed: three cards, one door, `nature: query` unused. `offers` was the only section of the
   four to get no prose: publications carry `means` + `shape`, subscriptions `notice` + `then`, and

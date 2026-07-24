@@ -1,8 +1,8 @@
 # Actor cards — `papeete-actor-card/v1`
 
 The contract, the doctrine, and the template for the card every papeete-actor publishes about itself:
-**what it can be asked to do, what facts it emits, what facts it pulls and what it does about them,
-and whose contract it resolves.** Machine-readable contract:
+**what it can be asked to do, what artefacts it ships, what facts it emits, what facts it pulls and
+what it does about them, and whose contract it resolves.** Machine-readable contract:
 [`https://github.com/papeete-hub/papeete-actor/blob/main/src/papeete_actor/schemas/papeete-actor-card.schema.yaml`](https://github.com/papeete-hub/papeete-actor/blob/main/src/papeete_actor/schemas/papeete-actor-card.schema.yaml). Decision records:
 [ADR-PA-0005](../../adr/ADR-PA-0005-the-actor-card.md) (the shape),
 [ADR-PA-0007](../../adr/ADR-PA-0007-actor-card-is-a-root-descriptor.md) (where it lives),
@@ -32,7 +32,9 @@ ADR-PA-0005:
 | **card** | `papeete-actor.yaml` — the papeete-actor's self-description |
 | **request** | interchange addressed to one papeete-actor, which it may refuse. `nature: query \| action` |
 | **offer** | an ability a papeete-actor advertises — the door a request arrives at. The card section; `request` stays the name of the interchange itself |
-| **publication** | a fact a papeete-actor emits, addressed to nobody, which no one may refuse |
+| **release** | a versioned artefact a papeete-actor ships — a spec, a corpus, a package, a runnable application. **State**: a consumer resolves it at a pin and uses it; latest wins |
+| **artefact** | the thing a release ships. `artefact` names the content, `release` names the versioned, pinnable act of shipping it — they are the same thing under two lights |
+| **publication** | a fact a papeete-actor emits, addressed to nobody, which no one may refuse. **Occurrence**: a point in time; append-only; superseded, never replaced |
 | **means** | the self-selection prose a section carries. On a publication: what the fact **is** and why it might concern a reader. On an offer: what the door **is for**, so a caller can tell whether to knock. Declared by whoever owns the thing described |
 | **shape** | a publication's payload schema. Producer-owned, required (`publication/v2`) |
 | **subscription** | a papeete-actor's declaration that it pulls another papeete-actor's publication, **and what it does about it** |
@@ -67,6 +69,34 @@ protocol this ecosystem does not speak. The same reason the card names no agent 
 sender may have subscribed to*. That is the whole delta from A2A, and it follows from asynchrony —
 not from the handlers being agents. Accepting a request never obliges the papeete-actor to honour it: triage
 is the owner's exclusive act.
+
+**A papeete-actor produces two kinds of thing, and consumes two kinds of thing.** State and
+occurrence are not one kind with a flag, and the sections that carry them are separate:
+
+| | **state** — versioned, actionable, resolved at a pin; latest wins | **occurrence** — a point in time; append-only; superseded, never replaced |
+|---|---|---|
+| **produce** | `releases` | `publications` |
+| **consume** | `dependencies` | `subscriptions` |
+
+The two consuming sections differ in **grain**, and on purpose. A subscription names one
+publication, because the join needs it to be joinable at all. A dependency names only the
+papeete-actor — declaring one covers everything that actor exposes: its releases, its offers, the
+queries you may put to it. A consumer that constrains itself to a subset has done so for its own
+reasons and may say so in prose; the contract does not ask. The cost is that "a release nobody
+pins" is not knowable, which is the same privacy `no_consumer_list` gives a publisher, arrived at
+from the other side.
+
+The proof they are not one kind is in `publication/v2` itself: `at`, `supersedes`, `backfilled` and
+git-commit ordering are all statements **about time**, and not one of them means anything applied to
+an artefact. You do not backfill a package; you do not supersede a tag.
+
+**Cutting the release *is* emitting the fact** — one act, two products. The artefact is the state; a
+release's `announced_by` names the publication saying that state now exists, and it ships in the
+same commit (`publication/v2` `atomicity`). The event *refers to* the release; it is not the
+release. That identity is why nobody has to decide separately which artefact edits are worth
+publishing: **the decision to cut a release is that decision**, already made and already dated. Where
+it was not made is the failure [ADR-PA-0008](../../adr/ADR-PA-0008-publication-obligations-pinning-backfill-interior-bindings.md)
+was written about — two breaking changes shipped under PATCH tags with nothing announcing either.
 
 **Subscriptions are declared consumer-side, never by the producer.** A producer listing its
 subscribers is precisely the coupling ADR-PA-0002 Decision 4 forbids. Fan-out is derived by
