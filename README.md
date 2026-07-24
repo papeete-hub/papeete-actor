@@ -28,11 +28,14 @@ An **actor** in this ecosystem is one repo, one human+agent pair, one mailbox, o
 
 Two rules do most of the work:
 
-> **The producer supplies meaning. The consumer declares intent. Nobody writes a handler.**
+> **The producer supplies meaning. The consumer declares intent. Behaviour is proposed, never
+> contracted.**
 
 A publication says what a fact *is* and why it might concern a reader — never what a reader should
 do about it. That belongs in the consumer's own card, under the consumer's own review. It is
-[MCP](https://modelcontextprotocol.io)'s rule applied to facts instead of tools.
+[MCP](https://modelcontextprotocol.io)'s rule applied to facts instead of tools. What the consumer
+then *runs* — a handler, a poll, a judgement, a human — is its own business; the contract asks only
+that the edge be declared, never that it be wired a particular way.
 
 > **Determinism sits at existence, never at interpretation.**
 

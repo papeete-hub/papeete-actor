@@ -33,11 +33,12 @@ ADR-PA-0005:
 | **request** | interchange addressed to one papeete-actor, which it may refuse. `nature: query \| action` |
 | **offer** | an ability a papeete-actor advertises — the door a request arrives at. The card section; `request` stays the name of the interchange itself |
 | **publication** | a fact a papeete-actor emits, addressed to nobody, which no one may refuse |
-| **means** | a publication's prose: what the fact **is**, and why it might concern a reader. Producer-owned |
+| **means** | the self-selection prose a section carries. On a publication: what the fact **is** and why it might concern a reader. On an offer: what the door **is for**, so a caller can tell whether to knock. Declared by whoever owns the thing described |
 | **shape** | a publication's payload schema. Producer-owned, required (`publication/v2`) |
 | **subscription** | a papeete-actor's declaration that it pulls another papeete-actor's publication, **and what it does about it** |
 | **notice** | the deterministic half of a subscription: binding, position, cadence |
 | **intent** | the judged half: what this consumer does about facts like that. Consumer-owned |
+| **behaviour** | what actually runs to honour an intent — a handler, a poll, a judgement, a human. Local, revisable, and not contracted |
 | **dependency** | a papeete-actor whose contract this one resolves, and at what ref |
 | **nonconformity** | what `ECO.GOV` emits about a papeete-actor's conformance — *not* a finding |
 
@@ -85,8 +86,12 @@ model decides what it has already seen, consumption stops being idempotent. `the
 half, and it is **consumer-authored by rule**: a publication supplies *meaning*, never *intent*. In
 MCP a server says what a tool **is** and never what the client should do with it; a publication
 reading *"Urbanist, refine the capability when you see this"* would put a producer in charge of a
-consumer's behaviour — worse coupling than the handler it replaces, because a handler at least lives
-where a reviewer looks.
+consumer's behaviour.
+
+**Behaviour is proposed, never contracted.** What a consumer then runs to honour its intent — a
+handler, a poll, an agent reading the prose, a human with a checklist — is its own, local and
+revisable, and binds nobody else. `then.run:` names a handler and is perfectly legitimate. What
+behaviour may never be is the *only* record of the edge: the declaration is what the join sees.
 
 **Three kinds of papeete-actor read a publication, and only one of them reads prose.** An agent reads the
 schema and the prose and judges; a human reads a rendering; a script parses fields and fails closed.

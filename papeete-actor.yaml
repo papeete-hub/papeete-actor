@@ -35,6 +35,13 @@ mailbox:
 # ── offers: what I can be asked to do ───────────────────────────────────
 offers:
   - id: contract-deviation
+    means: >-
+      the door for "your contract cannot express something my repo really does". Addressed to
+      whoever holds a card, or is trying to write one, and finds the shape unsatisfiable — a
+      required field that has no honest value, a true thing with no slot, a rule that mandates a
+      bug in their case. NOT the door for a gate that crashes or misreports (that is engineering
+      debt, and it is mine to fix without being asked), nor for a contract that is merely
+      inconvenient to satisfy.
     nature: action
     rail: contract-deviation
     completion: >-
@@ -58,7 +65,8 @@ publications:
     means: >-
       papeete-actor-card/v1 — the four sections a card carries (offers, publications, subscriptions,
       dependencies) and the rules that keep each one's owner straight: a producer supplies meaning,
-      a consumer declares intent, nobody writes a handler. Every repo that is a papeete-actor
+      a consumer declares intent, and behaviour is proposed, never contracted. Every repo that is a
+      papeete-actor
       declares this contract's version in its own card, so a revision here moves a shape the whole
       ecosystem is pinned to.
     shape: none

@@ -162,7 +162,7 @@ later is a new *binding*, not a new message — which is the whole reason to nam
 
 The anti-coupling rule for every edge:
 
-- **Findings/commands flow upstream, addressed** to the decision owner. Downstream may know
+- **Findings/requests flow upstream, addressed** to the decision owner. Downstream may know
   upstream — that is the Customer–Supplier direction.
 - **Events flow downstream, published — never delivered.** The publisher writes only to its own
   repo: the tag/release IS the event; an append-only `events/` log committed atomically with the
@@ -184,7 +184,7 @@ point-to-point to one subscriber — acceptable at N=1 consumers, must become re
 ADR-PA-0006 dissolves rather than fixes this: once settler subscribes by reading the log, pull *is*
 the fan-out mechanism at any N. No log is written yet.
 
-### Meaning, intent, and the handler that isn't there
+### Meaning, intent, and where behaviour lives
 
 Classic event-driven design puts a **handler** at every edge: the consumer writes `on(X): do Y`,
 against a schema, having anticipated the event. Two things are wrong with that here. Wiring cost is
@@ -200,25 +200,30 @@ happens without a producer knowing its consumers. It is a prompt, not a type.
 
 So the split, which `papeete-actor-card/v1` makes structural:
 
-> **The producer supplies meaning. The consumer declares intent. Nobody writes a handler.**
+> **The producer supplies meaning. The consumer declares intent. Behaviour is proposed, never
+> contracted.**
 
 | | who may author it | why only them |
 |---|---|---|
 | **meaning** — `publications[].means` | the producer | only they know why they emitted it, and under what duress |
 | **intent** — `subscriptions[].then` | the consumer | it is their behaviour, in their repo, under their review |
-| the handler | nobody | the reader bridges the two at read time |
+| **behaviour** — whatever actually runs | the actor running it | it is local and revisable, and binds nobody else |
 
 **The line that must not be crossed:** a publication reading *"Urbanist, refine the capability when
-you see this"* would put a producer in charge of a consumer's behaviour. That is strictly worse than
-the handler it replaces, because a handler at least lives in the consumer's repo where a reviewer
-looks. This is [MCP](https://modelcontextprotocol.io)'s rule applied to facts instead of tools: a
-server says what a tool **is**, never what the client should do with it. Meaning is producer-owned;
-the decision to act is consumer-owned.
+you see this"* would put a producer in charge of a consumer's behaviour. This is
+[MCP](https://modelcontextprotocol.io)'s rule applied to facts instead of tools: a server says what a
+tool **is**, never what the client should do with it. Meaning is producer-owned; the decision to act
+is consumer-owned.
 
-**And the declaration must survive.** Wiring cost falls to O(publications) — it must not fall to
+**A handler is not forbidden — it is simply not the contract.** `then.run:` names a script, and that
+is a handler by any honest reading. What a consumer runs may be a handler, a poll, an agent reading
+the prose, or a human with a checklist; the model does not rule on it, and a contract that did would
+be dictating an implementation. What behaviour may never be is the *only* record of the edge.
+
+**Because the declaration must survive.** Wiring cost falls to O(publications) — it must not fall to
 zero. If dispatch becomes wholly semantic ("the agent will notice what's relevant"), there is nothing
-left for `charter check` to join, and every conformance class in ADR-PA-0009 §5 evaporates. Drop the
-handler; keep the declaration. The declaration was never the heavy part.
+left for `papeete-actor check` to join, and every conformance class in ADR-PA-0009 §5 evaporates.
+Drop the wiring; keep the declaration. The declaration was never the heavy part.
 
 ### Determinism sits at existence, never at interpretation
 

@@ -56,6 +56,10 @@ mailbox:
 # the sender may have subscribed to (ADR-PA-0009 §4).
 offers:
   - id: finding
+    means: >-                       # what this door is FOR — so a CALLER can self-select.
+      what this offer accepts and on what ground, written so a sender can work out whether I am
+      the right actor to address. It must NOT route the caller elsewhere: where else a request
+      belongs is the §6 rail table's answer, not mine to author.
     nature: action                  # query (return information) | action (decide or do)
     rail: functional-gap            # the domain rail that makes me the right door
     from: [BNK.RSOL, implementation]
@@ -144,7 +148,7 @@ direction rule exists to prevent (AGENT-OPERATING-MODEL §5):
 | `subscriptions` | consumer-side | The mirror of someone else's `publications` — declared here, by you, never by them. Carries what you *do* about the fact. |
 | `dependencies` | consumer-side | Whose contract you resolve, and at what ref. Never whom you message. |
 
-## Meaning, intent, and the handler that isn't there
+## Meaning, intent, and where behaviour lives
 
 The split that makes `then:` work, and the reason a publication must never carry a `then:` of its
 own:
@@ -154,13 +158,15 @@ own:
   whoever would otherwise mistake this papeete-actor's invention for a decision"*, which any reader can apply
   to itself. That is how fan-out happens without the producer naming anyone.
 - **The consumer declares intent.** In its own card, in its own repo, under its own PR review.
-- **Nobody writes a handler.** The agent bridges the two texts at read time. Wiring cost falls from
-  O(publications × consumers) to O(publications) — but it must not fall to zero, because the
-  declaration is the only thing `papeete-actor check` can join on.
+- **Behaviour is proposed, never contracted.** What you actually run to honour that intent — a
+  handler, a poll, an agent reading the prose, a human with a checklist — is yours: local,
+  revisable, binding nobody else. `then.run:` names a handler and is perfectly legitimate. Wiring
+  cost falls from O(publications × consumers) to O(publications) — but it must not fall to zero, so
+  behaviour may never be the *only* record of the edge: the declaration is the only thing
+  `papeete-actor check` can join on.
 
 A publication saying *"Urbanist, refine the capability when you see this"* would be a producer
-authoring a consumer's behaviour: worse coupling than the handler it replaces, because a handler at
-least lives where a reviewer looks. In MCP the server says what a tool **is**, never what the client
+authoring a consumer's behaviour. In MCP the server says what a tool **is**, never what the client
 should do — this is that rule, applied to facts instead of tools.
 
 ## Determinism sits at existence, never at interpretation

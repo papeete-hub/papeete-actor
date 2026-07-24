@@ -54,12 +54,28 @@ identity:
 # A REQUEST HAS NO RETURN VALUE. It completes as a refusal, or LATER as a publication the sender
 # may have subscribed to (ADR-ECO-0014 §4). That is the delta from A2A, and it follows from
 # asynchrony — not from the handlers being agents.
+#
+# `means` IS REQUIRED, and it is the correction of v1's one asymmetry. Publications got `means` +
+# `shape`; subscriptions got `notice` + `then`; offers got four flat fields and no prose, so a
+# caller had nothing to reason a door against. ADR-PA-0010 deferred this and named the evidence:
+# THREE CARDS, ONE DOOR, `nature: query` NEVER USED — a section meant to advertise what an actor
+# can be asked to do had collapsed to a single generic entry. A door nobody can tell apart from
+# another door is not an advertisement.
 offers:
-  required: [id, nature, rail, completion]
+  required: [id, means, nature, rail, completion]
   optional: [from, becomes, ground_truth, note, status]
   enums:
     nature: [query, action]     # query = return information | action = decide or do
     rail: [functional-gap, contract-deviation, engineering-debt]
+  notes:
+    means: >-
+      what this door IS FOR, written so a CALLER can work out whether it is the right one. The
+      same self-selection burden `publications[].means` carries, pointed the other way: a
+      publication's prose lets a reader decide whether a fact concerns it; an offer's prose lets a
+      sender decide whether this is the actor to address. It states what the offer accepts and on
+      what ground. It MUST NOT route its callers elsewhere — where else a request belongs is the
+      §6 rail table's answer and the caller's judgement, and an offer that answered it would be
+      the meaning rule violated with the arrow reversed.
   empty_is_legal: true          # a papeete-actor nobody addresses is conformant
 
 # ── PUBLICATIONS ──────────────────────────────────────────────────────────────────────────────
@@ -86,19 +102,25 @@ publications:
       whose log is still empty, because a schema for a fact never emitted could only be imagined.
   empty_is_legal: true          # a terminal tier owes findings, not artefacts (ADR-ECO-0014 §3)
 
-# THE MEANING RULE — the line between a description and a handler.
+# THE MEANING RULE — the line between a description and a decision to act.
 #
 #   A publication supplies MEANING. It never supplies INTENT.
 #
 # In MCP a server says what a tool IS and never what the client should do with it: meaning is
 # producer-owned, the decision to act is consumer-owned. A publication reading "Urbanist, refine
-# the capability when you see this" would put a producer in charge of a consumer's behaviour —
-# strictly worse than the handler it replaces, because a handler at least lives in the consumer's
-# repo under the consumer's review. Intent lives in `subscriptions[].then`, and nowhere else.
+# the capability when you see this" would put a producer in charge of a consumer's behaviour.
+# Intent lives in `subscriptions[].then`, and nowhere else.
+#
+# BEHAVIOUR IS PROPOSED, NEVER CONTRACTED. What a consumer actually runs — a handler, a poll, an
+# agent reading the prose, a human with a checklist — is its own: local, revisable, binding nobody
+# else. A handler is a legitimate implementation of a declared intent; `then.run:` names one. What
+# it may never be is the ONLY record of the edge, because then there is nothing for the join to
+# see. That is what `then.at_least_one_of: [run, intent]` enforces — the declaration is the
+# contracted part, the behaviour is not.
 the_meaning_rule:
   producer_supplies: meaning
   consumer_declares: intent
-  nobody_writes: a handler
+  behaviour: proposed, never contracted
 
 # ── SUBSCRIPTIONS ─────────────────────────────────────────────────────────────────────────────
 # Facts I pull, and what I do about them. Declared BY ME, about someone else's publication — a
