@@ -34,6 +34,7 @@ recorded here.**
 | [ADR-PA-0012](./ADR-PA-0012-papeete-actor-the-gates-as-a-distributed-tool.md) | The conformance gates as a pinned distribution artifact, not a vendored script | Proposed |
 | [ADR-PA-0013](./ADR-PA-0013-papeete-actor-the-term.md) | `papeete-actor` — the ecosystem's actor is a particular construct, and is named as one | Proposed |
 | [ADR-PA-0014](./ADR-PA-0014-the-agent-doctrine-moves-here.md) | The agent doctrine moves here — a repo that ships the contract must also hold the reasoning | Proposed |
+| [ADR-PA-0015](./ADR-PA-0015-one-vocabulary-the-actor-fallback-is-removed.md) | One vocabulary — the `actor:` fallback is removed, and replaced by a refusal | Proposed |
 
 **Numbering is allocation order, not chronology.** `ADR-PA-0001` is this repo's founding decision and
 is dated after most of the records below it, which were made in `ecosystem-governance` between

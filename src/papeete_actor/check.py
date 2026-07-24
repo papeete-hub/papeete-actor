@@ -33,11 +33,22 @@ def _load(path: Path):
 
 
 def _actor_id(card: dict) -> str | None:
-    """The ecosystem-layer id. ADR-ECO-0018 renamed the key `actor:` -> `papeete_actor:`; both are
-    read because the join runs over a MIXED ecosystem — six cards are still v0 and will be until
-    each pair migrates in its own repo. Dropping the old key would make the join silently stop
-    resolving every unmigrated card, which is the one failure this tool exists to prevent."""
-    return card.get("papeete_actor") or card.get("actor")
+    """The ecosystem-layer id. ONE KEY: `papeete_actor:` (ADR-PA-0013, ADR-PA-0015).
+
+    `actor:` IS NOT READ AS A FALLBACK, and its removal is not a deletion. From the rename until
+    2026-07-23 both keys were read, because the join ran over a mixed ecosystem: six cards were
+    still at actor-card/v0 and only their own pairs could migrate them. All six did, so the
+    tolerance now describes nothing — and a tolerance kept past its occasion is how a transitional
+    shape becomes the permanent one.
+
+    IT IS REPLACED BY A LOUD FAILURE, NOT BY SILENCE, because silence here is the worse bug. A card
+    whose id does not resolve is not skipped: it still joins under its REPO NAME, so its
+    publications index as `banking-tech/X` while every consumer writes `BNK.TECH/X`. The join then
+    reports a DANGLING-SUBSCRIPTION against each one — a confident, precise, wrong answer, which is
+    exactly what this tool exists to prevent. So `run` REFUSES a card carrying the retired key
+    rather than quietly resolving it to None.
+    """
+    return card.get("papeete_actor")
 
 
 def run(workspace: Path, registry_path: Path) -> Report:
@@ -75,6 +86,17 @@ def run(workspace: Path, registry_path: Path) -> Report:
         card = _load(path)
         if not isinstance(card, dict):
             rep.errors.append(f"{path}: does not parse")
+            continue
+        # THE RETIRED KEY IS A HARD ERROR, not a fallback (ADR-PA-0015). See `_actor_id`: resolving
+        # it to None instead would leave the card in the join under its repo name and turn every
+        # `<id>/<publication>` subscription against it into a false DANGLING-SUBSCRIPTION.
+        if "actor" in card:
+            rep.errors.append(
+                f"{path}: declares the retired key `actor:` — renamed `papeete_actor:` by "
+                f"ADR-PA-0013. The transitional fallback that read both was removed once every "
+                f"card had migrated (ADR-PA-0015). Rename the key; until then this card's id "
+                f"cannot be resolved and the join would report false dangling subscriptions."
+            )
             continue
         cards[name] = card
         if card.get("card") != CONTRACT:

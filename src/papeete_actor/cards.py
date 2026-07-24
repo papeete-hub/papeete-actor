@@ -21,16 +21,22 @@ FLOATING = {"main", "master", "HEAD", "none", "None"}
 def registry_classes(reg: dict) -> dict[str, str]:
     """Map every id the registry knows to `actor` | `dangling` | `external`.
 
-    KEYED ON card_status, NOT on `actor:`. reliever-implementation carries `actor: none` (no BNK.*
-    context id) and yet its card is adopted; settler carries `actor: none` and ADR-ECO-0014 §1
-    ruled it an actor that owes one. Keying on `actor:` calls both external and silences the very
-    defect the class exists to surface.
+    KEYED ON card_status, NOT on `papeete_actor:`. reliever-implementation carries
+    `papeete_actor: none` (no BNK.* context id) and yet its card is adopted; settler carries
+    `papeete_actor: none` and ADR-PA-0009 §1 ruled it an actor that owes one. Keying on the id
+    calls both external and silences the very defect the class exists to surface.
+
+    ONE KEY on the registry side too, as of ADR-PA-0015 — the retired `actor:` is no longer read
+    here either. Unlike the card side this one could only ever mis-CLASSIFY, never mis-resolve:
+    `card_status` decides the class, and the id is used solely as an extra lookup alias. The
+    fallback still goes, because two vocabularies read in two places is one more place for them to
+    diverge.
     """
     out: dict[str, str] = {}
     for entry in reg.get("repos", []):
         status = entry.get("card_status")
         kind = "actor" if status in ("adopted", "pending") else "dangling" if status == "none" else "external"
-        for key in (entry.get("repo"), entry.get("papeete_actor") or entry.get("actor")):
+        for key in (entry.get("repo"), entry.get("papeete_actor")):
             if key and key != "none":
                 out[key] = kind
                 if "/" in key:
