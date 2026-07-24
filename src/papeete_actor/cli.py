@@ -4,7 +4,11 @@
     papeete-actor lint-message     --issue-body FILE      inter-agent-message/v0
     papeete-actor lint-publication REPO...                publication/v2
     papeete-actor check            --workspace DIR        the cross-card join
-    papeete-actor contracts                               which contract versions this build enforces
+    papeete-actor contracts                               which contracts + which deployment profile
+
+The contracts describe shapes; a DEPLOYMENT PROFILE supplies the values they cannot know — this
+deployment's rails, and the grammar of its taxonomy. `--profile FILE` on the gates that read them;
+the shipped reference profile is the default (ADR-PA-0016).
 """
 import argparse
 import sys
@@ -13,12 +17,15 @@ from pathlib import Path
 import yaml
 
 from . import CONTRACTS, __version__
-from . import cards, check, messages, publications
+from . import cards, check, messages, profile, publications
 from .report import Report
 from .schemas import contracts_dir, load
 
 
 REGISTRY_REL = Path("ecosystem-governance") / "ecosystem" / "registry.yaml"
+
+PROFILE_HELP = ("this deployment's profile — its rails and the grammar of its taxonomy. "
+                "Defaults to the shipped reference profile (ADR-PA-0016)")
 
 
 def _registry_candidates(root: Path):
@@ -42,6 +49,7 @@ def _registry(explicit: Path | None, near: Path) -> dict | None:
 
 def cmd_lint_card(args) -> int:
     schema = load("papeete-actor-card")
+    prof = profile.load(args.profile)
     workspace = Path(args.cards[0]).resolve().parent.parent
     reg = _registry(args.registry, workspace)
     if reg is None:
@@ -52,7 +60,7 @@ def cmd_lint_card(args) -> int:
         if not path.exists():
             rep.errors.append(f"{path}: no such file")
             continue
-        rep.merge(cards.lint(path, schema, reg))
+        rep.merge(cards.lint(path, schema, reg, prof))
     if args.strict:
         rep.errors += rep.warns
         rep.warns = []
@@ -61,13 +69,14 @@ def cmd_lint_card(args) -> int:
 
 def cmd_lint_message(args) -> int:
     schema = load("message")
+    prof = profile.load(args.profile)
     if args.payload:
-        rep = messages.lint_payload_file(Path(args.payload), schema)
+        rep = messages.lint_payload_file(Path(args.payload), schema, prof)
     else:
         body = sys.stdin.read() if args.issue_body == "-" else Path(args.issue_body).read_text()
         label = "issue body" if args.issue_body == "-" else args.issue_body
         labels = [x.strip() for x in args.labels.split(",") if x.strip()]
-        rep = messages.lint_issue(body, labels, label, schema)
+        rep = messages.lint_issue(body, labels, label, schema, prof)
     return rep.emit("message gate")
 
 
@@ -102,6 +111,16 @@ def cmd_contracts(args) -> int:
             return 1
         mark = "ok  " if actual == expected else "FAIL"
         print(f"  {mark} {kind:18} {actual}" + ("" if actual == expected else f"  (build expects {expected})"))
+    # A CONTRACT IS NOT COMPLETE WITHOUT THE VALUES IT CANNOT KNOW. Printed beside the contract
+    # versions because a consumer reading "which shapes does this build enforce" needs to know
+    # which deployment's rails and taxonomy it will enforce them against (ADR-PA-0016).
+    prof = profile.load(args.profile)
+    rails = profile.rails(prof)
+    grammar = profile.scope_grammar(prof)
+    src = args.profile or profile.default_path()
+    print(f"\nprofile '{prof.get('profile', '?')}' from {src}")
+    print(f"  rails          {', '.join(rails) if rails else '(unconstrained)'}")
+    print(f"  scope_grammar  {grammar or '(unconstrained)'}")
     return 0
 
 
@@ -114,6 +133,7 @@ def main(argv=None) -> int:
     p = sub.add_parser("lint-card", help="validate papeete-actor.yaml against papeete-actor-card/v1")
     p.add_argument("cards", nargs="+", type=Path)
     p.add_argument("--registry", type=Path, help="path to ecosystem/registry.yaml")
+    p.add_argument("--profile", type=Path, help=PROFILE_HELP)
     p.add_argument("--strict", action="store_true", help="fail on unmigrated (v0) cards too")
     p.set_defaults(fn=cmd_lint_card)
 
@@ -122,6 +142,7 @@ def main(argv=None) -> int:
     g.add_argument("--payload", metavar="FILE", help="a YAML file holding one finding")
     g.add_argument("--issue-body", metavar="FILE", help="a GitHub issue body ('-' for stdin)")
     p.add_argument("--labels", default="", help="comma-separated issue labels")
+    p.add_argument("--profile", type=Path, help=PROFILE_HELP)
     p.set_defaults(fn=cmd_lint_message)
 
     p = sub.add_parser("lint-publication", help="validate a repo's events/ log against publication/v2")
@@ -133,11 +154,19 @@ def main(argv=None) -> int:
     p.add_argument("--registry", type=Path, help="path to ecosystem/registry.yaml")
     p.set_defaults(fn=cmd_check)
 
-    p = sub.add_parser("contracts", help="which contract versions this build enforces")
+    p = sub.add_parser("contracts", help="which contract versions this build enforces, and against which profile")
+    p.add_argument("--profile", type=Path, help=PROFILE_HELP)
     p.set_defaults(fn=cmd_contracts)
 
     args = ap.parse_args(argv)
-    return args.fn(args)
+    try:
+        return args.fn(args)
+    except (FileNotFoundError, ValueError) as e:
+        # A missing or malformed profile/schema is a USER-FIXABLE misconfiguration, and both
+        # loaders raise with instructions. A traceback buries them under a stack the reader cannot
+        # act on, and reads as a crash in the gate rather than a mistake in the invocation.
+        print(f"  FAIL {e}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

@@ -67,7 +67,11 @@ offers:
   optional: [from, becomes, ground_truth, note, status]
   enums:
     nature: [query, action]     # query = return information | action = decide or do
-    rail: [functional-gap, contract-deviation, engineering-debt]
+  profiled:
+    rail: >-
+      the domain rail that makes me the right door. Which rails exist is a fact about the
+      DEPLOYMENT, not about this contract — see the deployment profile and ADR-PA-0016. The field
+      stays required; a profile that declares no rails constrains none.
   notes:
     means: >-
       what this door IS FOR, written so a CALLER can work out whether it is the right one. The

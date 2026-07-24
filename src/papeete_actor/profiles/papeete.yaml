@@ -1,0 +1,39 @@
+# papeete.yaml — the deployment profile of the Papeete banking ecosystem.
+#
+# A PROFILE IS NOT A CONTRACT. The contracts say a message carries a `rail` and a `scope`; they do
+# not say which rails exist or what an id looks like, because those are facts about ONE deployment's
+# domain and no contract can know them in advance. This file is where that deployment answers.
+#
+# It ships in the package as a REFERENCE profile, and is the default so that the ecosystem this
+# package grew in keeps working with no flag. That is a convenience, not a claim: another
+# organisation writes its own and passes `--profile`, and nothing here is privileged except by
+# being the one that came first. See ADR-PA-0016.
+
+profile: papeete-banking
+contract: deployment-profile/v0
+
+# ── THE RAILS ─────────────────────────────────────────────────────────────────────────────────
+# The routing dimensions of this deployment: a finding travels the rail of the DECISION it needs,
+# to the tier that owns that decision (AGENT-OPERATING-MODEL §6). Three, because this deployment's
+# factory has three tiers that decide things. A deployment with two tiers has two rails; one with a
+# compliance function may have four. The CONTRACT requires a rail; it never counted them.
+rails:
+  - functional-gap        # -> the tier that decides WHAT the system is
+  - contract-deviation    # -> the tier that decides HOW it is contracted
+  - engineering-debt      # -> the tier that builds it; stays home
+
+# ── THE TAXONOMY ──────────────────────────────────────────────────────────────────────────────
+# Every finding and task names the node of the capability taxonomy that owns it, explicitly
+# (WORK-OBSERVABILITY §3). This grammar IS this deployment's grain ladder, because the ids encode
+# the hierarchy as prefixes:
+#
+#     context   BNK.RLVR
+#     zone      BNK.RLVR.CAP.BSP
+#     L1        BNK.RLVR.CAP.BSP.001
+#     L2        BNK.RLVR.CAP.BSP.001.ENV
+#
+# OMIT THIS KEY and `scope` stays required but unconstrained — the honest position for a deployment
+# that has not yet built a taxonomy, and the one a first implementation starts from. What the
+# contract will not allow is dropping the field: a finding that names no owner is the noise floor
+# WORK-OBSERVABILITY exists to prevent.
+scope_grammar: '^BNK\.[A-Z]+(\.CAP\.[A-Z0-9]+(\.[0-9]+(\.[A-Z0-9]+)?)?)?$'
