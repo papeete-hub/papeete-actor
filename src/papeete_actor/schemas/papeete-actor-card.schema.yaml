@@ -1,7 +1,8 @@
 # papeete-actor-card.schema.yaml — the papeete-actor card contract.
 #
-# An ACTOR CARD is a repo's self-description: what it can be asked to do, what facts it emits, what
-# facts it pulls and what it does about them, and whose contract it resolves. It is `papeete-actor.yaml` at
+# An ACTOR CARD is a repo's self-description: what it can be asked to do, what artefacts it ships,
+# what facts it emits, what facts it pulls and what it does about them, and whose contract it
+# resolves. It is `papeete-actor.yaml` at
 # the papeete-actor's own repo root — the repo IS the papeete-actor's durable state, so the card lives beside the
 # gates and ledgers it names (ADR-ECO-0012).
 #
@@ -54,18 +55,104 @@ identity:
 # A REQUEST HAS NO RETURN VALUE. It completes as a refusal, or LATER as a publication the sender
 # may have subscribed to (ADR-ECO-0014 §4). That is the delta from A2A, and it follows from
 # asynchrony — not from the handlers being agents.
+#
+# `means` IS REQUIRED, and it is the correction of v1's one asymmetry. Publications got `means` +
+# `shape`; subscriptions got `notice` + `then`; offers got four flat fields and no prose, so a
+# caller had nothing to reason a door against. ADR-PA-0010 deferred this and named the evidence:
+# THREE CARDS, ONE DOOR, `nature: query` NEVER USED — a section meant to advertise what an actor
+# can be asked to do had collapsed to a single generic entry. A door nobody can tell apart from
+# another door is not an advertisement.
 offers:
-  required: [id, nature, rail, completion]
+  required: [id, means, nature, rail, completion]
   optional: [from, becomes, ground_truth, note, status]
   enums:
     nature: [query, action]     # query = return information | action = decide or do
     rail: [functional-gap, contract-deviation, engineering-debt]
+  notes:
+    means: >-
+      what this door IS FOR, written so a CALLER can work out whether it is the right one. The
+      same self-selection burden `publications[].means` carries, pointed the other way: a
+      publication's prose lets a reader decide whether a fact concerns it; an offer's prose lets a
+      sender decide whether this is the actor to address. It states what the offer accepts and on
+      what ground. It MUST NOT route its callers elsewhere — where else a request belongs is the
+      §6 rail table's answer and the caller's judgement, and an offer that answered it would be
+      the meaning rule violated with the arrow reversed.
   empty_is_legal: true          # a papeete-actor nobody addresses is conformant
+
+# ── THE TWO KINDS ─────────────────────────────────────────────────────────────────────────────
+# A papeete-actor produces two different things, and consumes two different things. Putting one in
+# the other's slot is the same class of error as getting the direction rule wrong.
+#
+#   STATE — versioned, actionable. A consumer RESOLVES it at a pin and uses it. Latest wins: a new
+#           version REPLACES the old one for anyone who moves their pin.
+#   OCCURRENCE — a point in time saying something happened. A consumer READS it at a position.
+#           Append-only: a later record SUPERSEDES, it never replaces.
+#
+# The stream fields of publication/v2 are the proof they are not one kind. `at`, `supersedes`,
+# `backfilled` and git-commit ordering are all statements ABOUT TIME, and none of them means
+# anything applied to an artefact: you do not backfill a package, you do not supersede a tag.
+the_two_kinds:
+  state:
+    is: versioned, actionable, resolved at a pin; latest wins
+    produced_in: releases
+    consumed_in: dependencies
+  occurrence:
+    is: a point in time; append-only and ordered; superseded, never replaced
+    produced_in: publications
+    consumed_in: subscriptions
+
+# ── RELEASES ──────────────────────────────────────────────────────────────────────────────────
+# The versioned artefacts I ship — a spec, a corpus, a package, a runnable application. This is the
+# STATE half of what I produce, and `dependencies` is its mirror on the consuming side, exactly as
+# `subscriptions` mirrors `publications`.
+#
+# CUTTING THE RELEASE IS EMITTING THE FACT — one act, two products. The artefact is the state; the
+# publication named in `announced_by` is the statement that the state now exists, and it ships in
+# the SAME COMMIT (publication/v2 `atomicity`). The event refers to the release; it is not the
+# release.
+#
+# That identity is why nobody has to decide separately which artefact edits are "worth publishing".
+# The decision to cut a release IS that decision — already made, already dated, by the same person
+# at the same moment. Where it was NOT made is the failure ADR-PA-0008 was written about: two
+# breaking changes shipped from reliever-business under PATCH tags with nothing announcing either,
+# and a downstream detector could only report STALE_PROVENANCE / severity: medium, because a
+# routine re-pin nudge was all it could know.
+releases:
+  required: [id, means, versioning, surface, announced_by]
+  optional: [shape, status, note]
+  notes:
+    id: what a consumer names when it pins me — the artefact's identity, never a path.
+    means: >-
+      what this artefact IS and what it is for, written so a consumer can decide whether to resolve
+      it. The same self-selection burden `publications[].means` and `offers[].means` carry.
+      THIS SECTION IS THE ANSWER TO "WHAT HAVE YOU TO PROPOSE?" — a peer learns what I ship by
+      READING my card, never by asking me. Discovery is static, which is why the prose must carry
+      enough for a reader to judge interest without a round trip. A release with a thin `means` is
+      an artefact nobody can evaluate without resolving it first.
+    versioning: >-
+      the scheme a consumer reads my refs under — semver, calver, a tag convention. Declared
+      because it is what makes a version delta INTERPRETABLE: `breaking` on the announcing record
+      and a major bump are two names for one judgement, and a gate can compare them only if it
+      knows the scheme.
+    surface: >-
+      where the artefact is resolved from. May be a level-1 descriptor rather than a path list
+      (publication/v2 `bindings.interior`) — "declare the artefact, delegate the binding".
+    announced_by: >-
+      the id of the publication that announces a new version of this release, on THIS card. It is
+      required because an artefact that ships without a fact is invisible to every consumer that
+      pins it — which is precisely the break the pinning rule exists to make visible.
+    shape: >-
+      OPTIONAL here, unlike on a publication. A release's own schema is sometimes meaningful (a
+      corpus, a manifest) and sometimes not (a runnable application), and the producer is the only
+      party that knows which.
+  empty_is_legal: true          # "a terminal tier owes the ecosystem findings, not artefacts"
+                                # (ADR-PA-0009 §3) — shipping nothing is a complete card
 
 # ── PUBLICATIONS ──────────────────────────────────────────────────────────────────────────────
 # Facts I emit: addressed to nobody, refusable by nobody. Published, never delivered — the record
 # IS the event and consumers pull (AGENT-OPERATING-MODEL §5). I never deliver, never acknowledge,
-# and never list my consumers.
+# and never list my consumers. This is the OCCURRENCE half of what I produce; `releases` is the
+# state half, and `subscriptions` is this section's mirror on the consuming side.
 #
 # MEANING AND FORM, ALWAYS BOTH. `means` is prose a human or an agent reasons over; `shape` points
 # at the payload schema a script validates against. Neither substitutes for the other, because I
@@ -86,19 +173,25 @@ publications:
       whose log is still empty, because a schema for a fact never emitted could only be imagined.
   empty_is_legal: true          # a terminal tier owes findings, not artefacts (ADR-ECO-0014 §3)
 
-# THE MEANING RULE — the line between a description and a handler.
+# THE MEANING RULE — the line between a description and a decision to act.
 #
 #   A publication supplies MEANING. It never supplies INTENT.
 #
 # In MCP a server says what a tool IS and never what the client should do with it: meaning is
 # producer-owned, the decision to act is consumer-owned. A publication reading "Urbanist, refine
-# the capability when you see this" would put a producer in charge of a consumer's behaviour —
-# strictly worse than the handler it replaces, because a handler at least lives in the consumer's
-# repo under the consumer's review. Intent lives in `subscriptions[].then`, and nowhere else.
+# the capability when you see this" would put a producer in charge of a consumer's behaviour.
+# Intent lives in `subscriptions[].then`, and nowhere else.
+#
+# BEHAVIOUR IS PROPOSED, NEVER CONTRACTED. What a consumer actually runs — a handler, a poll, an
+# agent reading the prose, a human with a checklist — is its own: local, revisable, binding nobody
+# else. A handler is a legitimate implementation of a declared intent; `then.run:` names one. What
+# it may never be is the ONLY record of the edge, because then there is nothing for the join to
+# see. That is what `then.at_least_one_of: [run, intent]` enforces — the declaration is the
+# contracted part, the behaviour is not.
 the_meaning_rule:
   producer_supplies: meaning
   consumer_declares: intent
-  nobody_writes: a handler
+  behaviour: proposed, never contracted
 
 # ── SUBSCRIPTIONS ─────────────────────────────────────────────────────────────────────────────
 # Facts I pull, and what I do about them. Declared BY ME, about someone else's publication — a
@@ -159,8 +252,18 @@ subscriptions:
         the rail determines the owner (AGENT-OPERATING-MODEL §6).
 
 # ── DEPENDENCIES ──────────────────────────────────────────────────────────────────────────────
-# The papeete-actors whose contract I resolve. Consumer-side by rule, exactly like subscriptions — this
-# generalises ADR-ECO-0014 §5 from facts to papeete-actors.
+# The papeete-actors I am interested in, and where I stand on each. Consumer-side by rule, like
+# subscriptions: this generalises ADR-ECO-0014 §5 from facts to papeete-actors.
+#
+# THE GRAIN IS THE ACTOR, DELIBERATELY — not the artefact. A dependency says "I resolve this
+# papeete-actor", and that covers everything it exposes: its releases, its offers, the queries I may
+# put to it. It does NOT enumerate which of them I take.
+#
+# The alternative was considered and rejected: `dependencies[].id` naming a release the way
+# `subscriptions[].to` names a publication. It would buy one conformance class and cost the thing
+# the coarse grain is for — a consumer that constrains itself to a subset of what a producer offers
+# has done so for its own reasons, and is free to say so in prose, but the CONTRACT does not ask it
+# to. `ref` pins the whole relationship, which is also what makes the pin one thing to move.
 #
 # IT IS NOT A ROUTING TABLE. It says whose card I READ, never whom I message. The v0 `requests_out`
 # said the latter and was removed: a request declares itself by arriving in the recipient's mailbox
@@ -252,3 +355,15 @@ conformance:
     finding is a prompt to declare, never an automatic verdict.
   unschematised_publication: a publication declaring no `shape` (publication/v2)
   unpinned_scripted_subscription: a `then.run` subscription resolving to a floating ref
+  unannounced_release: >-
+    a release whose `announced_by` names no publication on the same card. The artefact ships with
+    no fact, so a consumer that pins it cannot see it move — the ADR-PA-0008 failure, made
+    structural. Decidable from ONE card, so `lint-card` computes it.
+  unresolved_release: >-
+    NOT A CLASS, and the reason is a decision rather than a limitation. It would be the mirror of
+    unsubscribed_publication — a release nobody pins. But `dependencies` is ACTOR-grained on
+    purpose: a card declares interest in a papeete-actor, never a claim on one of its artefacts, so
+    "which releases are pinned" is information the contract deliberately does not collect. A
+    producer therefore cannot learn that a release has no consumers, exactly as `no_consumer_list`
+    prevents it learning who reads its publications. Publications differ because
+    `subscriptions[].to` must name one to be joinable at all.

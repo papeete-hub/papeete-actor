@@ -158,11 +158,44 @@ rather than passing as noise. Contract: [`https://github.com/papeete-hub/papeete
 doctrine: [`INTER-AGENT-MESSAGES.md`](./INTER-AGENT-MESSAGES.md) (ADR-PA-0004). Switching transport
 later is a new *binding*, not a new message — which is the whole reason to name it.
 
+### Two kinds downstream: state and occurrence
+
+What flows downstream is not one kind of thing. A papeete-actor ships **artefacts** — a spec, a
+corpus, a package, a runnable application — and it emits **facts**. They are produced by one act and
+consumed by two different verbs:
+
+| | **state** — versioned, actionable; a consumer *resolves* it at a pin; latest wins | **occurrence** — a point in time; append-only; *read* at a position; superseded, never replaced |
+|---|---|---|
+| **produce** | `releases` | `publications` |
+| **consume** | `dependencies` | `subscriptions` |
+
+The two consuming sections differ in **grain**, deliberately: a subscription names one publication
+(the join needs it), a dependency names only the papeete-actor — and that covers everything the
+actor exposes. So a producer can never learn which of its releases are pinned, which is the same
+privacy `no_consumer_list` gives it over its publications, reached from the other side.
+
+The proof they are not one kind with a flag is in `publication/v2`: `at`, `supersedes`, `backfilled`
+and git-commit ordering are all statements **about time**, and none means anything applied to an
+artefact. You do not backfill a package; you do not supersede a tag.
+
+**A release and an artefact are the same thing under two lights** — the artefact is the content, the
+release is the versioned, pinnable act of shipping it. And **cutting the release *is* emitting the
+fact**: one act, two products, one commit. The artefact is the state; the publication named in the
+release's `announced_by` is the statement that the state now exists. The event *refers to* the
+release; it is not the release.
+
+That identity does real work. Nobody has to decide separately which artefact edits are "worth
+publishing" — the decision to cut a release **is** that decision, already made and already dated by
+the same person at the same moment. And `breaking: true` and a major version become two names for
+one judgement, which is why ADR-PA-0008's failure was a single failure and not two: two breaking
+changes shipped from `reliever-business` under PATCH tags with nothing announcing either, and the
+downstream detector could only report `STALE_PROVENANCE / severity: medium`.
+
 ### The direction rule: addressed upstream, published downstream
 
 The anti-coupling rule for every edge:
 
-- **Findings/commands flow upstream, addressed** to the decision owner. Downstream may know
+- **Findings/requests flow upstream, addressed** to the decision owner. Downstream may know
   upstream — that is the Customer–Supplier direction.
 - **Events flow downstream, published — never delivered.** The publisher writes only to its own
   repo: the tag/release IS the event; an append-only `events/` log committed atomically with the
@@ -184,7 +217,7 @@ point-to-point to one subscriber — acceptable at N=1 consumers, must become re
 ADR-PA-0006 dissolves rather than fixes this: once settler subscribes by reading the log, pull *is*
 the fan-out mechanism at any N. No log is written yet.
 
-### Meaning, intent, and the handler that isn't there
+### Meaning, intent, and where behaviour lives
 
 Classic event-driven design puts a **handler** at every edge: the consumer writes `on(X): do Y`,
 against a schema, having anticipated the event. Two things are wrong with that here. Wiring cost is
@@ -200,25 +233,30 @@ happens without a producer knowing its consumers. It is a prompt, not a type.
 
 So the split, which `papeete-actor-card/v1` makes structural:
 
-> **The producer supplies meaning. The consumer declares intent. Nobody writes a handler.**
+> **The producer supplies meaning. The consumer declares intent. Behaviour is proposed, never
+> contracted.**
 
 | | who may author it | why only them |
 |---|---|---|
 | **meaning** — `publications[].means` | the producer | only they know why they emitted it, and under what duress |
 | **intent** — `subscriptions[].then` | the consumer | it is their behaviour, in their repo, under their review |
-| the handler | nobody | the reader bridges the two at read time |
+| **behaviour** — whatever actually runs | the actor running it | it is local and revisable, and binds nobody else |
 
 **The line that must not be crossed:** a publication reading *"Urbanist, refine the capability when
-you see this"* would put a producer in charge of a consumer's behaviour. That is strictly worse than
-the handler it replaces, because a handler at least lives in the consumer's repo where a reviewer
-looks. This is [MCP](https://modelcontextprotocol.io)'s rule applied to facts instead of tools: a
-server says what a tool **is**, never what the client should do with it. Meaning is producer-owned;
-the decision to act is consumer-owned.
+you see this"* would put a producer in charge of a consumer's behaviour. This is
+[MCP](https://modelcontextprotocol.io)'s rule applied to facts instead of tools: a server says what a
+tool **is**, never what the client should do with it. Meaning is producer-owned; the decision to act
+is consumer-owned.
 
-**And the declaration must survive.** Wiring cost falls to O(publications) — it must not fall to
+**A handler is not forbidden — it is simply not the contract.** `then.run:` names a script, and that
+is a handler by any honest reading. What a consumer runs may be a handler, a poll, an agent reading
+the prose, or a human with a checklist; the model does not rule on it, and a contract that did would
+be dictating an implementation. What behaviour may never be is the *only* record of the edge.
+
+**Because the declaration must survive.** Wiring cost falls to O(publications) — it must not fall to
 zero. If dispatch becomes wholly semantic ("the agent will notice what's relevant"), there is nothing
-left for `charter check` to join, and every conformance class in ADR-PA-0009 §5 evaporates. Drop the
-handler; keep the declaration. The declaration was never the heavy part.
+left for `papeete-actor check` to join, and every conformance class in ADR-PA-0009 §5 evaporates.
+Drop the wiring; keep the declaration. The declaration was never the heavy part.
 
 ### Determinism sits at existence, never at interpretation
 
@@ -318,9 +356,10 @@ One page per box that *is* its contract:
 | Role | which context, core/supporting |
 | Owned state | the repo — `records` |
 | `offers` | what it may be asked to do (`query` / `action`); the caller reasons, it may refuse |
+| `releases` | the versioned artefacts it ships — state, resolved at a pin, announced by a publication |
 | `publications` | facts it emits — `means` (the prose) **and** `shape` (the payload schema), always both |
 | `subscriptions` | facts it pulls — `notice` (deterministic) and `then` (what it does about them) |
-| `dependencies` | whose contract it resolves, and at what ref |
+| `dependencies` | which papeete-actors it is interested in, and at what ref — actor-grained, never per-artefact |
 | Membrane gates | what the bookends validate |
 | Work surface | its `work.yaml`: detection ledgers + kanban — how it reports and consumes findings ([WORK-OBSERVABILITY](./WORK-OBSERVABILITY.md)) |
 | Budget | token/time circuit breaker |

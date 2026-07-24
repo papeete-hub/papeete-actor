@@ -17,22 +17,31 @@ pip install papeete-actor
 ## What it enforces
 
 An **actor** in this ecosystem is one repo, one human+agent pair, one mailbox, one card. The card —
-`papeete-actor.yaml` at the repo root — declares four things, and each has exactly one owner:
+`papeete-actor.yaml` at the repo root — declares five things, and each has exactly one owner:
 
 | Section | Says | Owned by |
 |---|---|---|
 | `offers` | what I can be asked to do | me; the **caller** decides whether to ask |
+| `releases` | the versioned artefacts I ship, and what announces each | me |
 | `publications` | facts I emit — `means` (prose) **and** `shape` (payload schema) | me |
 | `subscriptions` | facts I pull, and **what I do about them** | me, about someone else's publication |
-| `dependencies` | whose contract I resolve, and at what ref | me |
+| `dependencies` | which actors I am interested in, at what ref — never which of their artefacts | me |
+
+Those four downstream/consumer sections are two kinds crossed with two directions — **state**
+(versioned, resolved at a pin, latest wins) in `releases`/`dependencies`, **occurrence** (a point in
+time, append-only, superseded never replaced) in `publications`/`subscriptions`. Cutting a release
+*is* emitting the fact: one act, two products, one commit.
 
 Two rules do most of the work:
 
-> **The producer supplies meaning. The consumer declares intent. Nobody writes a handler.**
+> **The producer supplies meaning. The consumer declares intent. Behaviour is proposed, never
+> contracted.**
 
 A publication says what a fact *is* and why it might concern a reader — never what a reader should
 do about it. That belongs in the consumer's own card, under the consumer's own review. It is
-[MCP](https://modelcontextprotocol.io)'s rule applied to facts instead of tools.
+[MCP](https://modelcontextprotocol.io)'s rule applied to facts instead of tools. What the consumer
+then *runs* — a handler, a poll, a judgement, a human — is its own business; the contract asks only
+that the edge be declared, never that it be wired a particular way.
 
 > **Determinism sits at existence, never at interpretation.**
 

@@ -102,7 +102,15 @@ collapses 0010 §5's noun/verb split, which is the point: there is one word now,
 construct, its card, its contract and its gate.
 
 **4. What this does not decide.** The five facets are named here as the reason the term must be
-particular. They are **not** contracted: each collides with standing doctrine — execution context
+particular.
+
+> **Facet 2, *the artefacts it produces*, has since been contracted** as `releases` — see
+> [ADR-PA-0010](./ADR-PA-0010-offers-subscription-disposition-and-dependencies.md). It turned out
+> to collide with nothing: an artefact is a release, cutting the release is emitting the fact, and
+> the card already carried the state/occurrence split on its consuming side. The remaining four
+> stand as written below.
+
+They are **not** contracted: each collides with standing doctrine — execution context
 against harness-independence (ADR-PA-0007 §3), enriching gates against *refuse-don't-repair*
 (AGENT-OPERATING-MODEL §4), and the granularity question (are `e2e test builder` and `e2e Tester`,
 which differ only by execution context, two papeete-actors?) against *one repo, one actor*

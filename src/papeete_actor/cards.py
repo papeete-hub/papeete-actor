@@ -155,6 +155,28 @@ def lint(path: Path, schema: dict | None = None, registry: dict | None = None) -
             else:
                 rep.notes.append(f"{where}: shape: none — log empty, obligation binds at first record")
 
+    # ── releases ─────────────────────────────────────────────────────────
+    # THE STATE HALF of what an actor produces. A release is versioned and actionable; a
+    # publication is a point in time. The stream fields — `at`, `supersedes`, `backfilled` — mean
+    # nothing applied to an artefact, which is why the two are separate sections rather than one
+    # with a flag.
+    if card.get("releases") is None:
+        rep.errors.append(f"{path}: missing 'releases' (use [] — an actor may ship no artefacts, ADR-PA-0009 §3)")
+    pub_ids = {p.get("id") for p in (card.get("publications") or []) if isinstance(p, dict)}
+    for i, rel in enumerate(card.get("releases") or []):
+        where = f"{path}: releases[{i}] '{rel.get('id', '?')}'"
+        _require(rel, schema["releases"]["required"], where, rep)
+        _unknown(rel, schema["releases"], where, rep)
+        # CUTTING THE RELEASE IS EMITTING THE FACT. The announcing publication is this actor's own,
+        # never someone else's — so the join is intra-card and decidable here rather than in check.
+        announced = rel.get("announced_by")
+        if announced is not None and announced not in pub_ids:
+            rep.errors.append(
+                f"{where}: announced_by '{announced}' is not a publication on this card — an "
+                f"artefact that ships with no fact is invisible to every consumer that pins it "
+                f"(papeete-actor-card/v1 `conformance.unannounced_release`)"
+            )
+
     # ── dependencies ─────────────────────────────────────────────────────
     if card.get("dependencies") is None:
         rep.errors.append(f"{path}: missing 'dependencies'")

@@ -35,6 +35,13 @@ mailbox:
 # ── offers: what I can be asked to do ───────────────────────────────────
 offers:
   - id: contract-deviation
+    means: >-
+      the door for "your contract cannot express something my repo really does". Addressed to
+      whoever holds a card, or is trying to write one, and finds the shape unsatisfiable — a
+      required field that has no honest value, a true thing with no slot, a rule that mandates a
+      bug in their case. NOT the door for a gate that crashes or misreports (that is engineering
+      debt, and it is mine to fix without being asked), nor for a contract that is merely
+      inconvenient to satisfy.
     nature: action
     rail: contract-deviation
     completion: >-
@@ -49,6 +56,25 @@ offers:
       A CONTRACT THAT CANNOT BE CONTRADICTED IS THE FAILURE ECO.GOV WROTE DOWN ABOUT ITSELF. This
       offer exists so the author of a shape can be told the shape is wrong, by the pair that hit it.
 
+# ── releases: the versioned artefacts I ship ────────────────────────────
+# ONE, and it is the whole point of the repo: the package. Cutting it IS emitting `gates` — the
+# artefact is the state a consumer resolves, the publication is the statement that it exists.
+releases:
+  - id: papeete-actor
+    means: >-
+      the conformance gates for all three contracts, plus the contracts themselves, as one
+      pip-installable package. Resolve it if you hold a papeete-actor card, or are writing one, and
+      want the shape checked rather than reviewed by eye. It needs no credential to anything: the
+      schemas are in the wheel, so a build reaches nothing outside its own checkout (ADR-PA-0001).
+    versioning: semver
+    surface: PyPI `papeete-actor`; source at papeete-hub/papeete-actor
+    announced_by: gates
+    shape: none
+    status: >-
+      0.1.0 released 2026-07-23 via Trusted Publishing. The TOOL version and the CONTRACT versions
+      move independently — `papeete-actor contracts` prints which a given build enforces
+      (ADR-PA-0012 §6), so a major bump here is about the gates, never about the shapes.
+
 # ── publications: facts I emit ──────────────────────────────────────────
 # These three moved here from ECO.GOV with the schemas themselves (ADR-PA-0001 / ADR-ECO-0019).
 # A revision to any of them is consumed by every actor in the ecosystem, by reference — and
@@ -56,11 +82,13 @@ offers:
 publications:
   - id: papeete-actor-card-contract
     means: >-
-      papeete-actor-card/v1 — the four sections a card carries (offers, publications, subscriptions,
-      dependencies) and the rules that keep each one's owner straight: a producer supplies meaning,
-      a consumer declares intent, nobody writes a handler. Every repo that is a papeete-actor
-      declares this contract's version in its own card, so a revision here moves a shape the whole
-      ecosystem is pinned to.
+      papeete-actor-card/v1 — the five sections a card carries (offers, releases, publications,
+      subscriptions, dependencies) and the rules that keep each one's owner straight: a producer
+      supplies meaning, a consumer declares intent, and behaviour is proposed, never contracted.
+      Downstream and consumer-side are two kinds crossed with two directions — state in
+      releases/dependencies, occurrence in publications/subscriptions. Every repo that is a
+      papeete-actor declares this contract's version in its own card, so a revision here moves a
+      shape the whole ecosystem is pinned to.
     shape: none
     status: >-
       no record ever emitted. Owed, and sharper than it was: v1 is a breaking change to a shape

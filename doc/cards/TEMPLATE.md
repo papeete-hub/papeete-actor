@@ -56,13 +56,42 @@ mailbox:
 # the sender may have subscribed to (ADR-PA-0009 §4).
 offers:
   - id: finding
+    means: >-                       # what this door is FOR — so a CALLER can self-select.
+      what this offer accepts and on what ground, written so a sender can work out whether I am
+      the right actor to address. It must NOT route the caller elsewhere: where else a request
+      belongs is the §6 rail table's answer, not mine to author.
     nature: action                  # query (return information) | action (decide or do)
     rail: functional-gap            # the domain rail that makes me the right door
     from: [BNK.RSOL, implementation]
     completion: refusal | <publication id>   # NOT a return value
     becomes: ADR candidate → task in tasks/<scope>/
 
+# ── RELEASES — the versioned artefacts I ship. STATE, not occurrence ────
+# A consumer RESOLVES these at a pin and uses them. Latest wins: a new version
+# replaces the old one for anyone who moves their pin. The mirror of this
+# section, consumer-side, is `dependencies` — exactly as `subscriptions`
+# mirrors `publications`.
+#
+# CUTTING THE RELEASE IS EMITTING THE FACT — one act, two products. The
+# artefact is the state; `announced_by` names the publication that says the
+# state now exists, and it ships in the SAME COMMIT. The event refers to the
+# release; it is not the release.
+releases:
+  - id: reliever-corpus            # what a consumer names when it pins me
+    means: >-
+      what this artefact IS and what it is for, so a consumer can decide
+      whether to resolve it. Same self-selection burden as a publication's.
+    versioning: semver             # how a consumer reads my refs — semver, calver, a convention
+    surface: kpack envelope; ontology/maps/     # or a level-1 descriptor
+    announced_by: CorpusEnvelope   # a publication ON THIS CARD. An artefact that
+                                   # ships with no fact is invisible to every
+                                   # consumer that pins it.
+    shape: none                    # optional here, unlike on a publication
+
 # ── PUBLICATIONS — facts I emit; addressed to nobody; nobody may refuse ─
+# OCCURRENCE, not state: a point in time saying something happened. Append-only —
+# a later record SUPERSEDES, it never replaces. `at`, `supersedes` and
+# `backfilled` are statements about time, and mean nothing applied to an artefact.
 # Binding: event-log (publication/v2) — one file per fact under
 # events/{publication}/{ref}.yaml, committed in the SAME COMMIT as the change it
 # describes. I never deliver, never acknowledge, and never list my consumers.
@@ -131,7 +160,7 @@ open:                               # the next agenda for this box
 
 ---
 
-## Filling the four sections
+## Filling the five sections
 
 They are not interchangeable, and putting information in the wrong one is the coupling bug the
 direction rule exists to prevent (AGENT-OPERATING-MODEL §5):
@@ -140,11 +169,22 @@ direction rule exists to prevent (AGENT-OPERATING-MODEL §5):
 |---------|-----------|------|
 | `records` | inward | The store of record. Only this papeete-actor writes it. |
 | `offers` | inbound | What I may be asked to do. The **caller** reasons about whether it is the right door; I may refuse. |
-| `publications` | downstream | Published, never delivered. The record *is* the event; consumers pull. **A publisher never opens issues in a consumer's repo, and never names its consumers.** |
-| `subscriptions` | consumer-side | The mirror of someone else's `publications` — declared here, by you, never by them. Carries what you *do* about the fact. |
-| `dependencies` | consumer-side | Whose contract you resolve, and at what ref. Never whom you message. |
+| `releases` | downstream, **state** | The versioned artefacts I ship. A consumer resolves them at a pin; latest wins. |
+| `publications` | downstream, **occurrence** | Published, never delivered. The record *is* the event; consumers pull. **A publisher never opens issues in a consumer's repo, and never names its consumers.** |
+| `subscriptions` | consumer-side, **occurrence** | The mirror of someone else's `publications` — declared here, by you, never by them. Carries what you *do* about the fact. |
+| `dependencies` | consumer-side | The papeete-actors you are interested in, and at what ref. **Actor-grained on purpose** — declaring one covers everything it exposes; you never enumerate which artefacts you take. Never whom you message. |
 
-## Meaning, intent, and the handler that isn't there
+**The two kinds, and the four sections they generate.** Produced and consumed state sit in
+`releases` / `dependencies`; produced and consumed occurrence sit in `publications` /
+`subscriptions`. Putting one in the other's slot is the same class of error as getting the
+direction rule wrong:
+
+| | state — *versioned, actionable, resolved at a pin; latest wins* | occurrence — *a point in time; append-only; superseded, never replaced* |
+|---|---|---|
+| **produce** | `releases` | `publications` |
+| **consume** | `dependencies` | `subscriptions` |
+
+## Meaning, intent, and where behaviour lives
 
 The split that makes `then:` work, and the reason a publication must never carry a `then:` of its
 own:
@@ -154,13 +194,15 @@ own:
   whoever would otherwise mistake this papeete-actor's invention for a decision"*, which any reader can apply
   to itself. That is how fan-out happens without the producer naming anyone.
 - **The consumer declares intent.** In its own card, in its own repo, under its own PR review.
-- **Nobody writes a handler.** The agent bridges the two texts at read time. Wiring cost falls from
-  O(publications × consumers) to O(publications) — but it must not fall to zero, because the
-  declaration is the only thing `papeete-actor check` can join on.
+- **Behaviour is proposed, never contracted.** What you actually run to honour that intent — a
+  handler, a poll, an agent reading the prose, a human with a checklist — is yours: local,
+  revisable, binding nobody else. `then.run:` names a handler and is perfectly legitimate. Wiring
+  cost falls from O(publications × consumers) to O(publications) — but it must not fall to zero, so
+  behaviour may never be the *only* record of the edge: the declaration is the only thing
+  `papeete-actor check` can join on.
 
 A publication saying *"Urbanist, refine the capability when you see this"* would be a producer
-authoring a consumer's behaviour: worse coupling than the handler it replaces, because a handler at
-least lives where a reviewer looks. In MCP the server says what a tool **is**, never what the client
+authoring a consumer's behaviour. In MCP the server says what a tool **is**, never what the client
 should do — this is that rule, applied to facts instead of tools.
 
 ## Determinism sits at existence, never at interpretation

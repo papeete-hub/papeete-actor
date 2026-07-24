@@ -118,7 +118,9 @@ each in different cards.
 Decision 3 also draws a line the reverse direction. It would have been lighter to let `then:` be pure
 prose — the fully semantic dispatch the design dialogue started from. That was rejected: if dispatch
 becomes wholly semantic, subscriptions stop being data and `papeete-actor check` loses every class it can
-join on. **Drop the handler, keep the declaration.** The declaration was never the heavy part.
+join on. **Drop the wiring, keep the declaration.** The declaration was never the heavy part — and
+the declaration is all that is contracted: what a consumer *runs* to honour its intent, handler or
+otherwise, stays its own. **Behaviour is proposed, never contracted.**
 
 Decision 5 is the first rule in this ecosystem whose obligation is set by the *consumer's own
 nature*. The pinning rule (ADR-PA-0008) binds a producer by a property of its consumers; this binds
@@ -146,7 +148,30 @@ a consumer by a property of itself, which is strictly easier to satisfy honestly
   consumption.
 - `papeete-actor check` still does not exist. `lint_card.py` validates one card; every cross-card figure in
   `ECO.GOV`'s card remains hand-computed, and that remains `ECO.GOV`'s standing nonconformity.
-- **Not decided:** whether `offers` gains a described-meaning field so a caller can reason about which
-  door is right, and whether `from:` — the recipient enumerating its senders — should go the way
-  `no_consumer_list` sent the producer's equivalent. Both were deferred to keep this revision to one
-  rename. The evidence that they matter is already in: three cards, one door, `nature: query` unused.
+- **`releases` is ADDED, as a fifth section** — decided after this revision shipped. An artefact and
+  a release are the same thing under two lights, and **cutting the release is emitting the fact**:
+  one act, two products, one commit. But a release is not a *publication*, and forcing them into one
+  section would have re-fused what the two kinds separate — a release is **state** (versioned,
+  actionable, resolved at a pin, latest wins) and a publication is an **occurrence** (a point in
+  time, append-only, superseded never replaced). `at`, `supersedes` and `backfilled` are statements
+  about time and mean nothing applied to an artefact.
+
+  The tell is that v1 already carried the split on the *consuming* side and lacked it on the
+  producing side: `dependencies` (id + ref — a pin, i.e. state) versus `subscriptions` (notice +
+  then — a position, i.e. occurrence). `releases` restores the symmetry — produce/consume × state/
+  occurrence, four sections. Each release names the publication that announces it in
+  `announced_by`, which makes ADR-PA-0008's failure structurally impossible rather than merely
+  forbidden, and yields a sixth conformance class, `unannounced-release`, decidable from one card.
+
+  This also **contracts the second of ADR-PA-0013 §4's five facets** — *"the artefacts it
+  produces"* — ahead of the successor ADR that record anticipated. The other four stand open.
+- **`offers[].means` is REQUIRED** — decided after this revision shipped, on the evidence this record
+  itself filed: three cards, one door, `nature: query` unused. `offers` was the only section of the
+  four to get no prose: publications carry `means` + `shape`, subscriptions `notice` + `then`, and
+  an offer carried four flat fields against which a caller could reason about nothing. It takes the
+  same self-selection burden `publications[].means` carries, pointed the other way — a publication's
+  prose lets a reader decide whether a fact concerns it; an offer's lets a sender decide whether this
+  is the actor to address. Folded into v1 rather than versioned: one card is at v1 today, so the
+  window costs one edit (the ADR-PA-0013 timing argument, applied again).
+- **Not decided:** whether `from:` — the recipient enumerating its senders — should go the way
+  `no_consumer_list` sent the producer's equivalent. Deferred with this revision and still open.
