@@ -20,7 +20,7 @@ only. The point is to have a folder you can build, run, poke at, and grow.
 
 ```bash
 git tag car-inspector/v0.1.0        # once, before the first build
-papeete-actor build examples/car-inspector --label dev
+papeete-actor build examples/car-inspector --label alpha
 docker run --rm -p 8080:8080 car-inspector:<tag-it-printed>
 ```
 
@@ -40,11 +40,12 @@ curl -X POST http://localhost:8080/inspections \
 curl http://localhost:8080/inspections
 ```
 
-`papeete-actor build` computes the image version as `<semver>-<label>-<short-sha>` — the semver
-core from the actor's own `car-inspector/vX.Y.Z` tag, the label from `--label`, and the SHA from
-the folder's most recent commit (`ADR-PA-0022`, `ADR-PA-0023`). No matching tag means no build:
-`git tag car-inspector/v0.1.0` first, then bump it (`car-inspector/v0.2.0`, ...) as the example
-itself evolves.
+`papeete-actor build` gets the image version from [`papeete-version`](https://github.com/papeete-hub/papeete-version)
+(`ADR-PA-0024`) — the semver core from the actor's own `car-inspector/vX.Y.Z` tag, plus a ciType
+label: `alpha`/`beta` print `{semver}-{label}-{short-sha}`, `--label prod` prints the bare semver
+(GA), `--label feature --feature-name X` prints `{semver}-{X}-{short-sha}`. No matching tag means
+no build: `git tag car-inspector/v0.1.0` first, then bump it (`car-inspector/v0.2.0`, ...) as the
+example itself evolves.
 
 ## Where this could go
 

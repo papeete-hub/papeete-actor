@@ -34,6 +34,7 @@ name = "papeete-actor"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "papeete-version" },
     { name = "pyyaml" },
 ]
 
@@ -44,10 +45,20 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "papeete-version", specifier = ">=0.1.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pyyaml", specifier = ">=6.0" },
 ]
 provides-extras = ["dev"]
+
+[[package]]
+name = "papeete-version"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/cf/bd/a73afc3ff5d6a2094613c9cbd1e9de0f579946b55e94b09d4dd5721a9c5f/papeete_version-0.1.0.tar.gz", hash = "sha256:470c7f922b904660c9559fadafe91a4f10997939889b64d88515e1864a9cc9b7", size = 18741, upload-time = "2026-08-21T09:59:14.801Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/50/c8/c3322cc1fae2f66db4b604358886dd6b7f82486d364863dbf861c837d0bd/papeete_version-0.1.0-py3-none-any.whl", hash = "sha256:2b9166416f48b1f4e2f2d760c365a6ff755e6ea00a1213e31a96fc2615af1ebc", size = 12646, upload-time = "2026-08-21T09:59:14.019Z" },
+]
 
 [[package]]
 name = "pluggy"

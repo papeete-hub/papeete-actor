@@ -1,7 +1,7 @@
 ---
 id: ADR-PA-0023
 title: "Version is semver core (from a tag) + an uninterpreted label + short SHA"
-status: Accepted
+status: Superseded by ADR-PA-0024
 date: 2026-08-21
 supersedes: []
 references:

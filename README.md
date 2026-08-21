@@ -4,10 +4,10 @@ A minimal, standalone actor identity contract for the [Papeete](https://github.c
 ecosystem: `papeete-actor-manifest/v0`.
 
 ```
-papeete-actor lint-manifest   ACTOR.YAML...          papeete-actor-manifest/v0
-papeete-actor version         FOLDER... --label L    print <semver>-<L>-<short-sha>, no Docker
-papeete-actor build           FOLDER... --label L    tag <name>:<semver>-<L>-<short-sha>
-papeete-actor contracts                               which contract version this build enforces
+papeete-actor lint-manifest   ACTOR.YAML...                                papeete-actor-manifest/v0
+papeete-actor version         FOLDER... --label CITYPE [--feature-name F]  print the computed version, no Docker
+papeete-actor build           FOLDER... --label CITYPE [--feature-name F]  tag <name>:<version>
+papeete-actor contracts                                                     which contract version this build enforces
 ```
 
 ```bash
@@ -37,40 +37,42 @@ dependencies, no subscriptions.
 
 ```bash
 git tag car-inspector/v0.1.0        # once, before the first build — see below
-papeete-actor build examples/car-inspector --label dev
+papeete-actor build examples/car-inspector --label alpha
 ```
 
-`build` reads that folder's `actor.yaml` for its `name`, and computes its **version** from git —
-`<semver>-<label>-<short-sha>` (`ADR-PA-0023`), never a field anyone declares
-(`ADR-PA-0022`):
+`build` reads that folder's `actor.yaml` for its `name`, and gets its **version** from
+[`papeete-version`](https://github.com/papeete-hub/papeete-version) — a real PyPI dependency,
+never a field `actor.yaml` declares (`ADR-PA-0022`, `ADR-PA-0024`). `--label` is a ciType, not a
+free string:
 
-| Part | Comes from |
+| `--label` | Prints |
 |---|---|
-| `semver` | the `X.Y.Z` core of the actor's own nearest `<name>/vX.Y.Z` git tag — namespaced per actor, since one repo can hold several |
-| `label` | `--label`, yours, uninterpreted — the taxonomy (`dev`/`rc.1`/`staging`/GA-has-none/...) isn't decided yet |
-| `short-sha` | the most recent commit that touched the folder |
+| `alpha`, `beta` | `{semver}-{label}-{shortSha}` |
+| `feature` (needs `--feature-name F`) | `{semver}-{F}-{shortSha}` |
+| `prod` | `{semver}` alone — GA, no label, no SHA |
 
-The image is tagged `<name>:<semver>-<label>-<short-sha>` on the local Docker image store — no
-registry, no push. Rebuilding at the same git state and label (including uncommitted edits — the
-ordinary local dev loop) always targets the exact same tag, and **replaces** the image that tag
-used to point to, rather than leaving it behind. An actor with no matching tag yet cannot be
-built — `git tag <name>/v0.1.0` first. See
+`{semver}` is the `X.Y.Z` core of the actor's own nearest `<name>/vX.Y.Z` git tag — namespaced per
+actor, since one repo can hold several. The image is tagged `<name>:<version>` on the local
+Docker image store — no registry, no push. Rebuilding at the same git state and label (including
+uncommitted edits — the ordinary local dev loop) always targets the exact same tag, and
+**replaces** the image that tag used to point to, rather than leaving it behind. An actor with no
+matching tag yet cannot be built — `git tag <name>/v0.1.0` first. See
 [ADR-PA-0021](./adr/ADR-PA-0021-building-an-actor-is-this-repos-job.md) for why building stays a
 single-actor operation, kept here rather than in a product's cross-actor orchestration, and
-[ADR-PA-0023](./adr/ADR-PA-0023-version-is-semver-label-and-short-sha.md) for the version format
-itself.
+[ADR-PA-0024](./adr/ADR-PA-0024-papeete-actor-depends-on-papeete-version.md) for why version
+computation itself now lives in a separate package this repo depends on.
 
 **Just want the version, no Docker?**
 
 ```bash
-papeete-actor version examples/car-inspector --label dev
-# 0.1.0-dev-5b8ffdf
+papeete-actor version examples/car-inspector --label alpha
+# 0.1.0-alpha-5b8ffdf
 ```
 
 `version` runs the exact same computation `build` uses to pick a tag, without touching Docker at
 all — a CI step recording what a build *would* tag before spending the time to build it, or a
 human checking where an actor stands right now. It prints a bare string per folder, one per line,
-so it composes in a shell: `VERSION=$(papeete-actor version examples/car-inspector --label dev)`.
+so it composes in a shell: `VERSION=$(papeete-actor version examples/car-inspector --label alpha)`.
 
 **Running a SET of actors together lives elsewhere.** A Docker-Compose-based launcher for naming
 and running several already-built actors together — reachable and discoverable by name — is a
@@ -82,11 +84,14 @@ composing or running a set of them.
 
 [`src/papeete_actor/schemas/papeete-actor-manifest.schema.yaml`](./src/papeete_actor/schemas/papeete-actor-manifest.schema.yaml)
 — ordinary committed source. **The package IS the contract**, not a gate that goes looking for
-it, so a build needs no network and no credential.
+it, so a build needs no network and no credential *for the schema itself*.
 
 ```bash
-uv build      # no network, no token, no fetch step
+uv build      # no network, no token, no fetch step for the contract
 ```
+
+(`papeete-version`, a real PyPI dependency since `ADR-PA-0024`, still needs the ordinary package
+resolution step any dependency does — the claim above is about the contract, not the whole build.)
 
 `papeete-actor` also holds its own manifest, [`actor.yaml`](./actor.yaml), under the contract it
 ships — and CI lints it on every push.
