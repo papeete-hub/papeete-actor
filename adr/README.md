@@ -11,6 +11,7 @@ enforces it, and this package's own boundary and release policy.
 | [ADR-PA-0019](./ADR-PA-0019-a-minimal-standalone-actor-manifest.md) | A minimal, standalone actor manifest, deliberately apart from the card contract | Accepted |
 | [ADR-PA-0021](./ADR-PA-0021-building-an-actor-is-this-repos-job.md) | Building an actor is this repo's job, not a product's | Accepted |
 | [ADR-PA-0022](./ADR-PA-0022-version-is-gits-fact-never-a-declared-field.md) | Version is git's fact, never a declared field | Accepted |
+| [ADR-PA-0023](./ADR-PA-0023-version-is-semver-label-and-short-sha.md) | Version is semver core (from a tag) + an uninterpreted label + short SHA | Accepted |
 
 `ADR-PA-0018` documents a decision made on the `papeete-actor-card` contract, which this repo no
 longer carries — kept for its reasoning about self-declared versioning, not because that contract

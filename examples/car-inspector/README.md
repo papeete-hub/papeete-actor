@@ -19,7 +19,8 @@ only. The point is to have a folder you can build, run, poke at, and grow.
 ## Try it
 
 ```bash
-papeete-actor build examples/car-inspector
+git tag car-inspector/v0.1.0        # once, before the first build
+papeete-actor build examples/car-inspector --label dev
 docker run --rm -p 8080:8080 car-inspector:<tag-it-printed>
 ```
 
@@ -39,8 +40,11 @@ curl -X POST http://localhost:8080/inspections \
 curl http://localhost:8080/inspections
 ```
 
-`papeete-actor build` computes the image tag from git — the folder needs at least one commit
-touching it before it can be built (`ADR-PA-0022`).
+`papeete-actor build` computes the image version as `<semver>-<label>-<short-sha>` — the semver
+core from the actor's own `car-inspector/vX.Y.Z` tag, the label from `--label`, and the SHA from
+the folder's most recent commit (`ADR-PA-0022`, `ADR-PA-0023`). No matching tag means no build:
+`git tag car-inspector/v0.1.0` first, then bump it (`car-inspector/v0.2.0`, ...) as the example
+itself evolves.
 
 ## Where this could go
 

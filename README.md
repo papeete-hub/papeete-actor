@@ -4,9 +4,10 @@ A minimal, standalone actor identity contract for the [Papeete](https://github.c
 ecosystem: `papeete-actor-manifest/v0`.
 
 ```
-papeete-actor lint-manifest   ACTOR.YAML...   papeete-actor-manifest/v0
-papeete-actor build           FOLDER...       build an actor's Dockerfile, tag <name>:<git-sha>
-papeete-actor contracts                       which contract version this build enforces
+papeete-actor lint-manifest   ACTOR.YAML...          papeete-actor-manifest/v0
+papeete-actor version         FOLDER... --label L    print <semver>-<L>-<short-sha>, no Docker
+papeete-actor build           FOLDER... --label L    tag <name>:<semver>-<L>-<short-sha>
+papeete-actor contracts                               which contract version this build enforces
 ```
 
 ```bash
@@ -35,17 +36,41 @@ dependencies, no subscriptions.
 **Turning one actor's own folder into a runnable image is this repo's job:**
 
 ```bash
-papeete-actor build examples/customer
+git tag car-inspector/v0.1.0        # once, before the first build — see below
+papeete-actor build examples/car-inspector --label dev
 ```
 
 `build` reads that folder's `actor.yaml` for its `name`, and computes its **version** from git —
-the short SHA of the most recent commit that touched the folder, never a field anyone declares
-(`ADR-PA-0022`). The image is tagged `<name>:<git-sha>` on the local Docker image store — no
-registry, no push. Rebuilding at the same git state (including uncommitted edits — the ordinary
-local dev loop) always targets the exact same tag, and **replaces** the image that tag used to
-point to, rather than leaving it behind. See
+`<semver>-<label>-<short-sha>` (`ADR-PA-0023`), never a field anyone declares
+(`ADR-PA-0022`):
+
+| Part | Comes from |
+|---|---|
+| `semver` | the `X.Y.Z` core of the actor's own nearest `<name>/vX.Y.Z` git tag — namespaced per actor, since one repo can hold several |
+| `label` | `--label`, yours, uninterpreted — the taxonomy (`dev`/`rc.1`/`staging`/GA-has-none/...) isn't decided yet |
+| `short-sha` | the most recent commit that touched the folder |
+
+The image is tagged `<name>:<semver>-<label>-<short-sha>` on the local Docker image store — no
+registry, no push. Rebuilding at the same git state and label (including uncommitted edits — the
+ordinary local dev loop) always targets the exact same tag, and **replaces** the image that tag
+used to point to, rather than leaving it behind. An actor with no matching tag yet cannot be
+built — `git tag <name>/v0.1.0` first. See
 [ADR-PA-0021](./adr/ADR-PA-0021-building-an-actor-is-this-repos-job.md) for why building stays a
-single-actor operation, kept here rather than in a product's cross-actor orchestration.
+single-actor operation, kept here rather than in a product's cross-actor orchestration, and
+[ADR-PA-0023](./adr/ADR-PA-0023-version-is-semver-label-and-short-sha.md) for the version format
+itself.
+
+**Just want the version, no Docker?**
+
+```bash
+papeete-actor version examples/car-inspector --label dev
+# 0.1.0-dev-5b8ffdf
+```
+
+`version` runs the exact same computation `build` uses to pick a tag, without touching Docker at
+all — a CI step recording what a build *would* tag before spending the time to build it, or a
+human checking where an actor stands right now. It prints a bare string per folder, one per line,
+so it composes in a shell: `VERSION=$(papeete-actor version examples/car-inspector --label dev)`.
 
 **Running a SET of actors together lives elsewhere.** A Docker-Compose-based launcher for naming
 and running several already-built actors together — reachable and discoverable by name — is a
