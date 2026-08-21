@@ -53,11 +53,11 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "papeete-version"
-version = "0.1.0"
+version = "0.1.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/cf/bd/a73afc3ff5d6a2094613c9cbd1e9de0f579946b55e94b09d4dd5721a9c5f/papeete_version-0.1.0.tar.gz", hash = "sha256:470c7f922b904660c9559fadafe91a4f10997939889b64d88515e1864a9cc9b7", size = 18741, upload-time = "2026-08-21T09:59:14.801Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2c/f0/0e4b25dc79368bb40fcec7c03c288cfe583d356eabd41b3d73a7ff0cdde4/papeete_version-0.1.1.tar.gz", hash = "sha256:3dc69f180264e851e3b44325f0281750e890eb1046fdd537b57b72b58d1b143a", size = 20003, upload-time = "2026-08-21T10:25:34.363Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/50/c8/c3322cc1fae2f66db4b604358886dd6b7f82486d364863dbf861c837d0bd/papeete_version-0.1.0-py3-none-any.whl", hash = "sha256:2b9166416f48b1f4e2f2d760c365a6ff755e6ea00a1213e31a96fc2615af1ebc", size = 12646, upload-time = "2026-08-21T09:59:14.019Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/54/cedd475e6a3c7c9e0d64fcc0af57a0b2c031165c1dea7cd10d7b338c4e70/papeete_version-0.1.1-py3-none-any.whl", hash = "sha256:0adbdeda112ea78577a3588fac144c690f0865a1add4d80c8bef1b6773b6eb9a", size = 13515, upload-time = "2026-08-21T10:25:33.306Z" },
 ]
 
 [[package]]
