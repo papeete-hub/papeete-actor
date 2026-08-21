@@ -1,0 +1,4 @@
+manifest: papeete-actor-manifest/v0
+name: car-inspector
+description: >-
+  Collects visual damage reports on returned second-hand cars, ahead of resale.

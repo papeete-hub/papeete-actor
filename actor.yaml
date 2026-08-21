@@ -1,0 +1,4 @@
+manifest: papeete-actor-manifest/v0
+name: papeete-actor
+description: >-
+  Ships the papeete-actor-manifest/v0 contract and the gate that enforces it.

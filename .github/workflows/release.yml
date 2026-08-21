@@ -18,10 +18,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - name: build
-        # No fetch step and no CONTRACTS_READ_TOKEN: the contracts are committed here
-        # (ADR-PA-0001). A release now depends on nothing but this checkout and PyPI.
+        # No fetch step and no external token: the contract is committed here. A release
+        # depends on nothing but this checkout and PyPI.
         run: uv build
-      - name: verify the wheel carries its contracts
+      - name: verify the wheel carries its contract
         run: |
           uv venv /tmp/probe
           uv pip install --python /tmp/probe/bin/python -q dist/*.whl

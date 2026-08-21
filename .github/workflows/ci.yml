@@ -1,11 +1,8 @@
 name: ci
 on: [push, pull_request]
 
-# NO CREDENTIAL. This pipeline reaches nothing outside its own checkout — the contracts are
-# committed source here (ADR-PA-0001), not something fetched from a private sibling. The previous
-# design needed a CONTRACTS_READ_TOKEN to read papeete-foundry/ecosystem-governance, and every run
-# of it failed because that secret was never set: a distribution artifact that cannot be built
-# without a credential to the lab is not a distribution artifact.
+# NO CREDENTIAL. This pipeline reaches nothing outside its own checkout — the contract is
+# committed source here, not something fetched from a private sibling.
 
 jobs:
   build:
@@ -15,36 +12,18 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - name: the gate suite
         # FIRST, because everything below it asserts that the package ARRIVED, and nothing below
-        # it asserts that the package is RIGHT. Linting this repo's own card is an end-to-end
-        # proof the schemas shipped; it is a poor regression test, because the card is written to
-        # pass. Three breaking changes to papeete-actor-card/v1 crossed this pipeline green.
+        # it asserts that the package is RIGHT.
         run: uv run --extra dev pytest -q
 
       - name: build
         run: uv build
-      - name: the wheel must carry its contracts
+      - name: the wheel must carry its contract
         # A wheel that installs cleanly and enforces nothing is the failure mode worth a gate.
-        # It was a real risk while the schemas were build output; it is a cheap assertion now.
         run: |
           uv venv /tmp/probe
           uv pip install --python /tmp/probe/bin/python -q dist/*.whl
           /tmp/probe/bin/papeete-actor contracts
-      - name: the gates must run
-        # The package validates its own card with its own contract — the smallest end-to-end
-        # proof that the schemas shipped and the gate can read them.
-        run: /tmp/probe/bin/papeete-actor lint-card papeete-actor.yaml
-
-      - name: the registry contract must be enforceable from the wheel alone
-        # A consumer authoring its own registry has only what shipped. This asserts the fourth
-        # contract arrived and its gate can read it, with no registry from this ecosystem in
-        # sight — the ADR-PA-0017 claim, checked rather than asserted.
-        run: |
-          printf 'repos:\n  - repo: acme/thing\n    card: papeete-actor.yaml\n    card_status: adopted\n' > /tmp/reg.yaml
-          /tmp/probe/bin/papeete-actor lint-registry /tmp/reg.yaml
-
-      - name: this repo's own publication log
-        # A repo that publishes the outbox contract and does not gate its own log would be
-        # exempting the author from the rule. It also enforces the pinning rule against itself:
-        # `papeete-actor-card-contract` and `gates` declare a breaking_flag, so every record under
-        # events/ must declare `breaking` — true or false, never absent.
-        run: /tmp/probe/bin/papeete-actor lint-publication .
+      - name: the gate must run
+        # The package validates its own manifest with its own contract — the smallest end-to-end
+        # proof that the schema shipped and the gate can read it.
+        run: /tmp/probe/bin/papeete-actor lint-manifest actor.yaml

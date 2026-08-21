@@ -1,0 +1,39 @@
+# papeete-actor-manifest.schema.yaml — the papeete-actor-manifest contract.
+#
+# TWO FIELDS, NOTHING ELSE. Not a card, and not a relative of one — this is a separate,
+# standalone lineage that says only WHO an actor is: its name, and what it is, in prose. No
+# offers, no publications, no releases, no dependencies, no subscriptions belong here; that is
+# the point (ADR-PA-0019).
+#
+# ─── NO `version` FIELD, ON PURPOSE ───────────────────────────────────────────────────────────
+# An earlier revision carried a self-declared `version:`, free-form, no scheme mandated. Removed
+# (ADR-PA-0022): version is GIT'S FACT about an actor, not the actor's claim about itself — a
+# self-declared field drifts the moment a human forgets to bump it, and the repo already knows
+# it exactly. `papeete-actor build` computes it fresh, every build, from the most recent commit
+# that touched the actor's folder (`build.py`'s `git_version()`). Nothing in this file states it.
+#
+# ─── THE FOLDER-ROOT CONVENTION — DOCUMENTED, NOT CHECKED ────────────────────────────────────
+# `actor.yaml` sits at the root of a folder whose ENTIRE CONTENTS belong to the actor it names —
+# the same "the repo IS the actor's durable state" spirit as ADR-ECO-0012 in the wider ecosystem.
+# A single-file lint has nothing to compare that claim against, so this contract states the
+# convention in prose and does not gate it.
+#
+# ─── WHY A SEPARATE FILENAME ──────────────────────────────────────────────────────────────────
+# `actor.yaml`, not `papeete-actor.yaml` — a deliberately distinct name, so a gate reading one
+# file is never mistaken for one built to read a different, larger contract's file.
+
+contract: papeete-actor-manifest/v0
+
+kind: papeete-actor-manifest
+
+location: actor.yaml            # at the folder root; see the folder-root convention above.
+
+required: [manifest, name, description]
+
+notes:
+  manifest: >-
+    names this contract, exactly the role `card:` plays on papeete-actor-card — so this lineage
+    gets its own version-migration story (v0 -> v1, warn-not-fail) from day one, independent of
+    the card's.
+  name: the actor's name.
+  description: free prose — what this actor is.

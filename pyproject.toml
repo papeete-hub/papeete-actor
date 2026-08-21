@@ -1,12 +1,12 @@
 [project]
 name = "papeete-actor"
-version = "0.5.0"
-description = "Conformance gates for the Papeete ecosystem contracts — actor cards, inter-agent messages, publication logs, the ecosystem registry."
+version = "0.1.0"
+description = "A minimal, standalone actor identity contract for the Papeete ecosystem — papeete-actor-manifest/v0."
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Papeete Consulting", email = "yoann.remy@outlook.com" }]
 license = "MIT"
-keywords = ["governance", "conformance", "agents", "bounded-context", "actor-model"]
+keywords = ["governance", "conformance", "agents", "actor-model", "manifest"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
@@ -21,22 +21,19 @@ dev = ["pytest>=8.0"]
 [project.scripts]
 papeete-actor = "papeete_actor.cli:main"
 
-# THE GATES ARE TESTED, WHICH THEY WERE NOT UNTIL 0.4.0. Three breaking changes to
-# papeete-actor-card/v1 shipped between 0.1.0 and 0.4.0 with nothing exercising the gate but this
-# repo's own card — which passes trivially and therefore caught none of them. The one downstream
-# consumer discovered `offers[].means` had become required by its own suite going red.
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "e2e: spawns a real Docker build (test_build.py) — needs a Docker daemon; deselect with -m 'not e2e' when none is available.",
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-# NO BUILD HOOK, NO FETCH, NO TOKEN. The schemas under src/papeete_actor/schemas/ are ORDINARY
-# COMMITTED SOURCE — this package IS the contracts, not a gate that goes looking for them
-# (ADR-PA-0001). They therefore ship in the wheel like any other package data, and a build needs
-# no network and no credential. `pip install papeete-actor` is enough to hold the contracts and
-# enforce them, which is what makes an organisation able to stand up a papeete-actor without any
-# access to the Papeete lab.
+# NO BUILD HOOK, NO FETCH, NO TOKEN. The schema under src/papeete_actor/schemas/ is ORDINARY
+# COMMITTED SOURCE — this package IS the contract, not a gate that goes looking for it. It
+# therefore ships in the wheel like any other package data, and a build needs no network and no
+# credential.
 [tool.hatch.build.targets.wheel]
 packages = ["src/papeete_actor"]

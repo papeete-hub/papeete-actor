@@ -1,14 +1,12 @@
 # papeete-actor
 
-Conformance gates for the [Papeete](https://github.com/papeete-foundry) ecosystem contracts.
+A minimal, standalone actor identity contract for the [Papeete](https://github.com/papeete-foundry)
+ecosystem: `papeete-actor-manifest/v0`.
 
 ```
-papeete-actor lint-card         papeete-actor.yaml…  papeete-actor-card/v1
-papeete-actor lint-message      --issue-body         inter-agent-message/v0
-papeete-actor lint-publication  REPO…                publication/v2
-papeete-actor lint-registry     registry.yaml…       ecosystem-registry/v0
-papeete-actor check             --workspace DIR      the cross-card join
-papeete-actor contracts                              which contract versions this build enforces
+papeete-actor lint-manifest   ACTOR.YAML...   papeete-actor-manifest/v0
+papeete-actor build           FOLDER...       build an actor's Dockerfile, tag <name>:<git-sha>
+papeete-actor contracts                       which contract version this build enforces
 ```
 
 ```bash
@@ -17,74 +15,68 @@ pip install papeete-actor
 
 ## What it enforces
 
-An **actor** in this ecosystem is one repo, one human+agent pair, one mailbox, one card. The card —
-`papeete-actor.yaml` at the repo root — declares five things, and each has exactly one owner:
+An actor's manifest — `actor.yaml`, at the root of a folder whose entire contents belong to the
+actor — declares two things, and nothing else:
 
-| Section | Says | Owned by |
-|---|---|---|
-| `offers` | what I can be asked to do | me; the **caller** decides whether to ask |
-| `releases` | the versioned artefacts I ship, and what announces each | me |
-| `publications` | facts I emit — `means` (prose) **and** `shape` (payload schema) | me |
-| `subscriptions` | facts I pull, and **what I do about them** | me, about someone else's publication |
-| `dependencies` | which actors I am interested in, at what ref — never which of their artefacts | me |
+| Field | Says |
+|---|---|
+| `name` | the actor's name |
+| `description` | free prose — what this actor is |
 
-Those four downstream/consumer sections are two kinds crossed with two directions — **state**
-(versioned, resolved at a pin, latest wins) in `releases`/`dependencies`, **occurrence** (a point in
-time, append-only, superseded never replaced) in `publications`/`subscriptions`. Cutting a release
-*is* emitting the fact: one act, two products, one commit.
+No `version` field. `manifest: papeete-actor-manifest/v0` names the contract itself, the same
+role `card:` plays on a larger card contract — so this lineage can migrate (v0 → v1,
+warn-not-fail) on its own, and a manifest declaring some other value is read and warned as
+UNMIGRATED rather than failed.
 
-Two rules do most of the work:
+See [ADR-PA-0019](./adr/ADR-PA-0019-a-minimal-standalone-actor-manifest.md) for why this stays
+apart from a larger card contract on purpose — no offers, no publications, no releases, no
+dependencies, no subscriptions.
 
-> **The producer supplies meaning. The consumer declares intent. Behaviour is proposed, never
-> contracted.**
+**Turning one actor's own folder into a runnable image is this repo's job:**
 
-A publication says what a fact *is* and why it might concern a reader — never what a reader should
-do about it. That belongs in the consumer's own card, under the consumer's own review. It is
-[MCP](https://modelcontextprotocol.io)'s rule applied to facts instead of tools. What the consumer
-then *runs* — a handler, a poll, a judgement, a human — is its own business; the contract asks only
-that the edge be declared, never that it be wired a particular way.
+```bash
+papeete-actor build examples/customer
+```
 
-> **Determinism sits at existence, never at interpretation.**
+`build` reads that folder's `actor.yaml` for its `name`, and computes its **version** from git —
+the short SHA of the most recent commit that touched the folder, never a field anyone declares
+(`ADR-PA-0022`). The image is tagged `<name>:<git-sha>` on the local Docker image store — no
+registry, no push. Rebuilding at the same git state (including uncommitted edits — the ordinary
+local dev loop) always targets the exact same tag, and **replaces** the image that tag used to
+point to, rather than leaving it behind. See
+[ADR-PA-0021](./adr/ADR-PA-0021-building-an-actor-is-this-repos-job.md) for why building stays a
+single-actor operation, kept here rather than in a product's cross-actor orchestration.
 
-*"Has anything appeared after my position?"* must stay deterministic — if a model decides what it
-has already seen, consumption stops being idempotent. *"Does this fact matter to me?"* is
-irreducibly judgement. A subscription declares both halves separately, and `papeete-actor` checks that
-the deterministic half stays deterministic.
+**Running a SET of actors together lives elsewhere.** A Docker-Compose-based launcher for naming
+and running several already-built actors together — reachable and discoverable by name — is a
+separate, standalone package: [`papeete-product`](https://github.com/papeete-hub/papeete-product),
+`ADR-PP-0001`. This repo carries actor identity and how to build one actor; nothing about
+composing or running a set of them.
 
-## The contracts are in this repo
+## The contract is in this repo
 
-[`src/papeete_actor/schemas/`](./src/papeete_actor/schemas/) — ordinary committed source. **The
-package IS the contracts**, not a gate that goes looking for them
-([ADR-PA-0001](./adr/ADR-PA-0001-papeete-actor-is-sovereign.md)).
-
-That is what makes an organisation able to stand up a papeete-actor without depending on Papeete for
-anything. The previous design fetched the schemas at build time from a private lab repo, which meant
-a build needed a credential nobody outside the lab could have — and spec and gate could not change
-in one commit, the drift generator `ADR-ECO-0005` was written to prevent.
-
-Every gate **loads** its schema. None hard-codes a field, an enum, or a rule.
+[`src/papeete_actor/schemas/papeete-actor-manifest.schema.yaml`](./src/papeete_actor/schemas/papeete-actor-manifest.schema.yaml)
+— ordinary committed source. **The package IS the contract**, not a gate that goes looking for
+it, so a build needs no network and no credential.
 
 ```bash
 uv build      # no network, no token, no fetch step
 ```
 
-`papeete-actor` also holds its own card, [`papeete-actor.yaml`](./papeete-actor.yaml), under the
-contract it ships — and CI lints it on every push. If the schemas failed to ship in the wheel, or a
-gate could not read them, that check fails.
+`papeete-actor` also holds its own manifest, [`actor.yaml`](./actor.yaml), under the contract it
+ships — and CI lints it on every push.
 
 ## Versioning
 
-The tool version and the contract versions are different things and move independently.
+The tool version and the contract version are different things and move independently.
 `papeete-actor contracts` prints the mapping for any installed build:
 
 ```
 papeete-actor 0.1.0  —  contracts from …/site-packages/papeete_actor/schemas
-  ok   papeete-actor-card papeete-actor-card/v1
-  ok   message            inter-agent-message/v0
-  ok   publication        publication/v2
+  ok   manifest           papeete-actor-manifest/v0
 ```
 
-A card declares the **contract** version; your CI pins the **tool**.
+A manifest declares the **contract** version; your CI pins the **tool**.
 
 ## Releasing
 
@@ -129,21 +121,13 @@ After the first successful release PyPI converts the pending publisher into a no
 automatically; there is no second setup step.
 
 **Nothing has been published yet.** `papeete-actor` is unclaimed on PyPI and the release lane has
-never run — `git tag v0.1.0 && git push origin v0.1.0` is the whole of it.
+never run.
 
 ### What a release asserts
 
 The workflow builds, installs the wheel into a clean venv, and runs `papeete-actor contracts`
-before publishing — so a build that lost its schemas fails the release instead of shipping a gate
+before publishing — so a build that lost its schema fails the release instead of shipping a gate
 that enforces nothing.
-
-## What it does not do
-
-`papeete-actor check` computes four conformance classes — dangling subscription, unsubscribed
-publication, unschematised publication, unpinned scripted subscription. It deliberately does not
-compute the fifth, **undeclared consumption**: the evidence for that lives in consumer source code,
-not in cards, so detection is a heuristic and a heuristic finding is a prompt to declare, never a
-verdict.
 
 ## Licence
 
