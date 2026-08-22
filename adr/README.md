@@ -13,6 +13,7 @@ enforces it, and this package's own boundary and release policy.
 | [ADR-PA-0022](./ADR-PA-0022-version-is-gits-fact-never-a-declared-field.md) | Version is git's fact, never a declared field | Accepted |
 | [ADR-PA-0023](./ADR-PA-0023-version-is-semver-label-and-short-sha.md) | Version is semver core (from a tag) + an uninterpreted label + short SHA | Superseded by ADR-PA-0024 |
 | [ADR-PA-0024](./ADR-PA-0024-papeete-actor-depends-on-papeete-version.md) | papeete-actor depends on papeete-version for its version computation | Accepted |
+| [ADR-PA-0025](./ADR-PA-0025-an-actors-folder-may-declare-its-own-k8s-and-terraform-deploy-config.md) | An actor's folder may declare its own k8s and Terraform deploy config | Accepted |
 
 `ADR-PA-0018` documents a decision made on the `papeete-actor-card` contract, which this repo no
 longer carries — kept for its reasoning about self-declared versioning, not because that contract

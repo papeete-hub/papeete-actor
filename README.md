@@ -33,6 +33,13 @@ See [ADR-PA-0019](./adr/ADR-PA-0019-a-minimal-standalone-actor-manifest.md) for 
 apart from a larger card contract on purpose — no offers, no publications, no releases, no
 dependencies, no subscriptions.
 
+An actor's folder may also carry a `deploy/` subfolder — `deploy/k8s/` (a kustomize `base/` +
+`overlays/<name>/` layout) and/or `deploy/terraform/` (convention only, not executed by anything
+yet) — for a deploy tool like
+[`papeete-deploy`](https://github.com/papeete-hub/papeete-deploy) to consume. Entirely optional,
+entirely actor-authored; this repo reads none of it. See
+[ADR-PA-0025](./adr/ADR-PA-0025-an-actors-folder-may-declare-its-own-k8s-and-terraform-deploy-config.md).
+
 **Turning one actor's own folder into a runnable image is this repo's job:**
 
 ```bash

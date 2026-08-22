@@ -15,6 +15,7 @@ only. The point is to have a folder you can build, run, poke at, and grow.
 | `actor.yaml` | identity — `papeete-actor-manifest/v0`: name + description, nothing else |
 | `Dockerfile` | the build recipe — `python:3.12-slim`, no dependencies |
 | `app.py` | the actor itself — a tiny stdlib HTTP server |
+| `deploy/k8s/` | kustomize deploy config — `base/` + `overlays/develop/` ([ADR-PA-0025](../../adr/ADR-PA-0025-an-actors-folder-may-declare-its-own-k8s-and-terraform-deploy-config.md)) |
 
 ## Try it
 
@@ -46,6 +47,28 @@ label: `alpha`/`beta` print `{semver}-{label}-{short-sha}`, `--label prod` print
 (GA), `--label feature --feature-name X` prints `{semver}-{X}-{short-sha}`. No matching tag means
 no build: `git tag car-inspector/v0.1.0` first, then bump it (`car-inspector/v0.2.0`, ...) as the
 example itself evolves.
+
+## Deploy to k8s (develop)
+
+`deploy/k8s/base/` is a plain Deployment + Service (`image: car-inspector`, no tag — a deploy
+tool retags it at deploy time, per ADR-PA-0025). `deploy/k8s/overlays/develop/` layers an
+Ingress on top so the service is reachable from outside the cluster, on an ingress-nginx
+controller, over plain HTTP (no TLS — not needed for a local/dev cluster):
+
+```bash
+kubectl kustomize examples/car-inspector/deploy/k8s/overlays/develop | kubectl apply -f -
+```
+
+The Ingress exposes the app under `/ws-develop/car-inspector` and rewrites the prefix away
+before forwarding, since `app.py`'s own routes (`/health`, `/inspections`) are rooted at `/` and
+know nothing about it:
+
+```bash
+curl http://<cluster-host>/ws-develop/car-inspector/health
+```
+
+`/ws-develop` stands for the `develop` overlay's environment name — swap it (and the
+`ingressClassName`, if your controller isn't `nginx`) per overlay for other environments.
 
 ## Where this could go
 
