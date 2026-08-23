@@ -109,7 +109,7 @@ The tool version and the contract version are different things and move independ
 `papeete-actor contracts` prints the mapping for any installed build:
 
 ```
-papeete-actor 0.1.0  —  contracts from …/site-packages/papeete_actor/schemas
+papeete-actor 1.0.0  —  contracts from …/site-packages/papeete_actor/schemas
   ok   manifest           papeete-actor-manifest/v0
 ```
 
@@ -122,16 +122,17 @@ Tag-triggered, via [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publi
 it for an upload token. There is nothing to rotate and nothing to leak.
 
 ```bash
-git tag v0.1.0 && git push origin v0.1.0     # .github/workflows/release.yml does the rest
+git tag vX.Y.Z && git push origin vX.Y.Z     # .github/workflows/release.yml does the rest
 ```
 
 ### One-time setup — **done for this repo**, both steps
 
 Kept as a record of what is configured, and as the recipe for the next package that needs it.
 
-**1. A pending publisher on PyPI** ✅ *registered 2026-07-23*. The project did not exist yet, so it
-is registered from the publisher side rather than by a first manual upload. At
-<https://pypi.org/manage/account/publishing/>, as a **GitHub** pending publisher:
+**1. A pending publisher on PyPI** ✅ *registered 2026-07-23, converted to a normal publisher the
+same day* once the first release succeeded. The project did not exist yet, so it was registered
+from the publisher side rather than by a first manual upload. At
+<https://pypi.org/manage/account/publishing/>, as a **GitHub** publisher:
 
 | Field | Value |
 |---|---|
@@ -155,10 +156,14 @@ earn their keep.
 nothing here needs to be public for the package to be.
 
 After the first successful release PyPI converts the pending publisher into a normal one
-automatically; there is no second setup step.
+automatically; there is no second setup step. That conversion already happened.
 
-**Nothing has been published yet.** `papeete-actor` is unclaimed on PyPI and the release lane has
-never run.
+**Published, with one deliberate identity break.** `0.1.0`/`0.4.0`/`0.5.0` shipped the old, much
+larger card / inter-agent-message / registry package this repo carried before it was pared down to
+the minimal identity contract described in this README ("back to basics"). `1.0.0` is the first
+release of that minimal shape — a break, not a continuation, so `pip install papeete-actor`
+resolves to the narrow `papeete-actor-manifest/v0` contract from here on (PyPI orders `1.0.0` above
+`0.5.0`; nothing before it was pulled, since PyPI never allows deleting or reusing a version).
 
 ### What a release asserts
 
