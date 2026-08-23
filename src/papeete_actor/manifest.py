@@ -8,6 +8,7 @@ A MISMATCHED MANIFEST IS UNMIGRATED, NOT NON-CONFORMANT — the same discipline 
 applies to `card:`: a manifest declaring some other `manifest:` value (or none at all) is read,
 warned, and not checked further, because adoption and migration are each pair's own act.
 """
+from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
@@ -16,6 +17,12 @@ from .report import Report
 from .schemas import load
 
 CONTRACT = "papeete-actor-manifest/v0"
+
+
+@dataclass(frozen=True)
+class Manifest:
+    name: str
+    description: str
 
 
 def lint(path: Path | str, schema: dict | None = None) -> Report:
@@ -47,3 +54,14 @@ def lint(path: Path | str, schema: dict | None = None) -> Report:
     if not rep.errors:
         rep.oks.append(f"{path} conforms to {CONTRACT}")
     return rep
+
+
+def describe(path: Path | str) -> Manifest:
+    """Typed identity fetch. Raises if the manifest is missing, malformed, or UNMIGRATED —
+    callers are expected to have already run lint() and confirmed no errors, the same
+    precondition load()-style call sites elsewhere in this ecosystem already rely on."""
+    path = Path(path)
+    manifest = yaml.safe_load(path.read_text())
+    if not isinstance(manifest, dict) or manifest.get("manifest") != CONTRACT:
+        raise ValueError(f"{path}: not a conformant {CONTRACT} manifest — run lint() first")
+    return Manifest(name=str(manifest["name"]), description=str(manifest.get("description") or ""))

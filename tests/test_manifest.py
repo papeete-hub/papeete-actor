@@ -68,3 +68,16 @@ def test_a_manifest_that_does_not_parse_is_reported_not_raised(tmp_path):
 def test_a_manifest_that_is_not_a_mapping_is_reported(tmp_path):
     rep = manifest.lint(write(tmp_path, ["a", "list"]))
     assert any("not a mapping" in e for e in rep.errors)
+
+
+# ── describe() — the typed identity fetch ─────────────────────────────────────────────────────
+
+def test_describe_returns_the_typed_identity(tmp_path):
+    assert manifest.describe(write(tmp_path, MANIFEST)) == manifest.Manifest(
+        name="Archivist", description="Keeps a ledger and answers about it.")
+
+
+def test_describe_raises_on_an_unmigrated_manifest(tmp_path):
+    path = write(tmp_path, dict(MANIFEST, manifest="papeete-actor-manifest/v1"))
+    with pytest.raises(ValueError, match="run lint\\(\\) first"):
+        manifest.describe(path)
